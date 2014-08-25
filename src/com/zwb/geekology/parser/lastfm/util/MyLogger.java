@@ -43,6 +43,16 @@ public class MyLogger
 		}
 	}
 
+	public boolean isLogLevelEnabled(LogLevel level)
+	{
+		Level log4jLevel = mapLogLevel(level);
+		if ((log4jLevel == null) || (!logger.isEnabled(log4jLevel)))
+		{
+			return false;
+		}
+		return true;
+	}
+
 	public void log(LogLevel level, Object... messages)
 	{
 		Level log4jLevel = mapLogLevel(level);
