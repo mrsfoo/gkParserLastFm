@@ -24,11 +24,11 @@ import com.zwb.geekology.parser.impl.GkParsingResult;
 import com.zwb.geekology.parser.impl.GkParsingResultArtist;
 import com.zwb.geekology.parser.impl.GkParsingResultSampler;
 import com.zwb.geekology.parser.impl.GkParsingSource;
-import com.zwb.geekology.parser.impl.utils.GkParserCommonUtils;
 import com.zwb.geekology.parser.lastfm.db.GkDbArtistLastFm;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.geekology.parser.lastfm.util.MyLogger;
 import com.zwb.geekology.parser.lastfm.util.MyLogger.LogLevel;
+import com.zwb.stringutil.StringReformat;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
@@ -170,7 +170,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 			Album al = it.next();
 			String ar = al.getArtist();
 			matches.add(ar+"/"+al.getName());
-			if(GkParserCommonUtils.compareReformatRemoveStartingThe(ar, artistName))
+			if(StringReformat.equals(ar, artistName, true))
 			{
 				ret = LastFmHelper.searchArtist(ar, false).iterator().next();
 				if(log.isLogLevelEnabled(level))
