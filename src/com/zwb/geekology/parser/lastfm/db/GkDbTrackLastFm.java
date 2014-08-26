@@ -19,7 +19,7 @@ import com.zwb.lazyload.Ptr;
 import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 
-public class GkDbTrack extends AbstrGkDbItemLastFmWithTags implements IGkDbTrack
+public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkDbTrack
 {
 	private Track track;
 	private IGkDbRelease release;
@@ -27,7 +27,7 @@ public class GkDbTrack extends AbstrGkDbItemLastFmWithTags implements IGkDbTrack
 	private int trackNo;
 	private Ptr<Integer> duration = new Ptr<Integer>();
 	
-	public GkDbTrack(Track track, IGkDbArtist artist, IGkDbRelease release, int trackNo)
+	public GkDbTrackLastFm(Track track, IGkDbArtist artist, IGkDbRelease release, int trackNo)
 	{
 		super(track, GkParserObjectFactory.createSource(Config.getSourceString()));
 		this.track = track;
@@ -73,7 +73,7 @@ public class GkDbTrack extends AbstrGkDbItemLastFmWithTags implements IGkDbTrack
 	{
 		public Integer load()
 		{
-			return GkDbTrack.this.track.getDuration();
+			return GkDbTrackLastFm.this.track.getDuration();
 		}
 	}
 
@@ -81,7 +81,7 @@ public class GkDbTrack extends AbstrGkDbItemLastFmWithTags implements IGkDbTrack
 	{
 		public List<IGkDbTag> load()
 		{
-			Collection<Tag> t = Track.getTopTags(GkDbTrack.this.getArtist().getName(), GkDbTrack.this.getName(), Config.getApiKey());
+			Collection<Tag> t = Track.getTopTags(GkDbTrackLastFm.this.getArtist().getName(), GkDbTrackLastFm.this.getName(), Config.getApiKey());
 			Iterator<Tag> it = t.iterator();
 			List<IGkDbTag> tags = new ArrayList<>();
 			while(it.hasNext())

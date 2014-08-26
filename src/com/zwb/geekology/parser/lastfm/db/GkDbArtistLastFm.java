@@ -11,7 +11,10 @@ import com.zwb.geekology.parser.api.db.IGkDbRelease;
 import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.lastfm.Config;
+import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
+import com.zwb.lazyload.ILoader;
+import com.zwb.lazyload.LazyLoader;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
@@ -51,17 +54,7 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGk
 	@Override
 	public List<IGkDbTag> getStyleTags()
 	{
-		if(this.tags==null)
-		{
-			this.tags = new ArrayList<>();
-			Collection<Tag> lastFmTags = LastFmHelper.searchTagsForArtist(this.getName(), true);
-			Iterator<Tag> it = lastFmTags.iterator();
-			while(it.hasNext())
-			{
-				tags.add(new GkDbTagLastFm(it.next()));
-			}
-		}
-		return this.tags;
+		return LazyLoader.loadLazy(this.tags, new TagLoader());
 	}
 
 	@Override
@@ -106,5 +99,20 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGk
 			}
 		}
 		return this.similarsNames;
+	}
+	
+	class TagLoader implements ILoader
+	{
+		public List<IGkDbTag> load()
+		{
+			Collection<Tag> t = Artist.getTopTags(GkDbArtistLastFm.this.getName(), Config.getApiKey());
+			Iterator<Tag> it = t.iterator();
+			List<IGkDbTag> tags = new ArrayList<>();
+			while(it.hasNext())
+			{
+				tags.add(new GkDbTagLastFm(it.next()));
+			}
+			return tags;
+		}
 	}
 }

@@ -13,8 +13,10 @@ import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.lastfm.Config;
+import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.lazyload.ILoader;
+import com.zwb.lazyload.LazyLoader;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Tag;
@@ -61,33 +63,12 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 	@Override
 	public List<IGkDbTag> getStyleTags()
 	{
-		if(this.tags==null)
-		{
-			this.tags = new ArrayList<>();
-			Collection<Tag> lastFmTags = LastFmHelper.searchTagsForAlbum(this.getArtist().getName(), this.getName(), true);
-			Iterator<Tag> it = lastFmTags.iterator();
-			while(it.hasNext())
-			{
-				tags.add(new GkDbTagLastFm(it.next()));
-			}
-		}
-		return this.tags;
+		return LazyLoader.loadLazy(this.tags, new TagLoader());
 	}
 
 	public List<IGkDbTrack> getTracks() 
 	{
-		if(this.tracks==null)
-		{
-			this.tracks = new ArrayList<>();
-			Collection<Track> lfmts = LastFmHelper.searchTracksForAlbum(this.album, true);
-			int i=1;
-			for(Track t: lfmts)
-			{
-				this.tracks.add(new GkDbTrack(t, this.getArtist(), this, i));
-				i++;
-			}
-		}
-		return this.tracks;
+		return LazyLoader.loadLazy(this.tags, new TrackLoader());
 	}
 
 	@Override
@@ -113,4 +94,37 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 		}
 		return this.date;
 	}
+	
+	class TrackLoader implements ILoader
+	{
+		public List<IGkDbTrack> load()
+		{
+			Collection<Track> t = GkDbReleaseLastFm.this.album.getTracks();
+			Iterator<Track> it = t.iterator();
+			List<IGkDbTrack> tracks = new ArrayList<>();
+			int i = 1;
+			while(it.hasNext())
+			{
+				tracks.add(new GkDbTrackLastFm(it.next(), GkDbReleaseLastFm.this.getArtist(), GkDbReleaseLastFm.this, i));
+				i++;
+			}
+			return tracks;
+		}
+	}
+
+	class TagLoader implements ILoader
+	{
+		public List<IGkDbTag> load()
+		{
+			Collection<Tag> t = Album.getTopTags(GkDbReleaseLastFm.this.getArtist().getName(), GkDbReleaseLastFm.this.getName(), Config.getApiKey());
+			Iterator<Tag> it = t.iterator();
+			List<IGkDbTag> tags = new ArrayList<>();
+			while(it.hasNext())
+			{
+				tags.add(new GkDbTagLastFm(it.next()));
+			}
+			return tags;
+		}
+	}
+
 }
