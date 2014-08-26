@@ -18,15 +18,13 @@ import de.umass.lastfm.Artist;
 import de.umass.lastfm.MusicEntry;
 import de.umass.lastfm.Tag;
 
-public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithDesc implements IGkDbArtist
+public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGkDbArtist
 {
 	private Artist artist;
-	private List<IGkDbTag> tags;
 	private List<IGkDbRelease> releases;
 	private List<IGkDbArtist> similar;
 	private List<String> releaseNames;
 	private List<String> similarsNames;
-	private List<String> tagNames;
 	
 	public GkDbArtistLastFm(Artist artist)
 	{
@@ -94,20 +92,6 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithDesc implements IGk
 			}
 		}
 		return this.releaseNames;
-	}
-
-	@Override
-	public List<String> getStyleTagNames() 
-	{
-		if(this.tagNames==null)
-		{
-			this.tagNames = new ArrayList<>();
-			for(IGkDbTag t: this.getStyleTags())
-			{
-				this.tagNames.add(t.getName());
-			}			
-		}
-		return this.tagNames;
 	}
 
 	@Override

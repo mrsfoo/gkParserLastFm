@@ -14,17 +14,16 @@ import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
+import com.zwb.lazyload.ILoader;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 
-public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithDesc implements IGkDbRelease
+public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IGkDbRelease
 {
 	private IGkDbArtist artist;
 	private Album album;
-	private List<IGkDbTag> tags;
-	private List<String> tagNames;
 	private List<IGkDbTrack> tracks;
 	private List<String> trackNames;
 	private Date date;
@@ -75,29 +74,17 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithDesc implements IG
 		return this.tags;
 	}
 
-	@Override
-	public List<String> getStyleTagNames() 
-	{
-		if(this.tagNames==null)
-		{
-			this.tagNames = new ArrayList<>();
-			for(IGkDbTag t: this.getStyleTags())
-			{
-				this.tagNames.add(t.getName());
-			}			
-		}
-		return this.tagNames;
-	}
-
 	public List<IGkDbTrack> getTracks() 
 	{
 		if(this.tracks==null)
 		{
 			this.tracks = new ArrayList<>();
 			Collection<Track> lfmts = LastFmHelper.searchTracksForAlbum(this.album, true);
+			int i=1;
 			for(Track t: lfmts)
 			{
-				this.tracks.add(new GkDbTrack(t, this.getArtist(), this));
+				this.tracks.add(new GkDbTrack(t, this.getArtist(), this, i));
+				i++;
 			}
 		}
 		return this.tracks;

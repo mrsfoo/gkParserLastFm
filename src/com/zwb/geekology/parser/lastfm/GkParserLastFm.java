@@ -5,30 +5,23 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import jdk.nashorn.internal.parser.AbstractParser;
-
 import com.zwb.geekology.parser.abstr.db.AbstrGkParser;
 import com.zwb.geekology.parser.api.db.IGkDbArtist;
 import com.zwb.geekology.parser.api.db.IGkDbRelease;
 import com.zwb.geekology.parser.api.exception.GkParserException;
-import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParser;
 import com.zwb.geekology.parser.api.parser.IGkParserQuery;
-import com.zwb.geekology.parser.api.parser.IGkParsingResult;
 import com.zwb.geekology.parser.api.parser.IGkParsingResultArtist;
 import com.zwb.geekology.parser.api.parser.IGkParsingResultSampler;
-import com.zwb.geekology.parser.api.parser.IGkParsingSource;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
 import com.zwb.geekology.parser.enums.GkParsingState;
-import com.zwb.geekology.parser.impl.GkParsingResult;
 import com.zwb.geekology.parser.impl.GkParsingResultArtist;
 import com.zwb.geekology.parser.impl.GkParsingResultSampler;
-import com.zwb.geekology.parser.impl.GkParsingSource;
 import com.zwb.geekology.parser.lastfm.db.GkDbArtistLastFm;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.geekology.parser.lastfm.util.MyLogger;
 import com.zwb.geekology.parser.lastfm.util.MyLogger.LogLevel;
-import com.zwb.stringutil.StringReformat;
+import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
@@ -74,7 +67,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 		if (query.hasRelease())
 		{
 			log.debug("query for artist <"+query.getArtist()+"> with release <"+query.getRelease()+">");
-			artist = this.queryArtist(query.getArtist(), query.getRelease(), result);
+			artist = this.queryArtistViaRelease(query.getArtist(), query.getRelease(), result);
 		}
 		else
 		{
@@ -111,7 +104,8 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 		if(!artists.isEmpty())
 		{
 			result.addEvent(GkParsingEventType.ENTRY_FOUND, "query for artist <"+artistName+"> returned <"+artists.size()+"> matches");
-			return new GkDbArtistLastFm(artists.iterator().next());			
+			Artist chosen = findBestMatchingArtist(artistName, artists);
+			return new GkDbArtistLastFm(chosen);			
 		}
 		result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "query for artist <"+artistName+"> returned <"+artists.size()+"> matches");
 		setResultErrorThrow(result);
@@ -119,7 +113,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 		return null;
 	}
 	
-	private IGkDbArtist queryArtist(String artistName, String releaseName, GkParsingResultArtist result) throws GkParserException
+	private IGkDbArtist queryArtistViaRelease(String artistName, String releaseName, GkParsingResultArtist result) throws GkParserException
 	{
 		Artist artist = queryLastFmArtistViaReleases(artistName, releaseName);
 		if(artist==null)
@@ -157,30 +151,63 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	private Artist queryLastFmArtistViaReleases(String artistName, String releaseName)
 	{
 		Collection<Album> albums = LastFmHelper.searchAlbum(releaseName, false);
-		LogLevel level = LogLevel.DEBUG;
-		List<String> matches = new ArrayList<>();
 		if((albums==null)||(albums.size()==0))
 		{
 			return null;
 		}
-		Iterator<Album> it = albums.iterator();
-		Artist ret = null;
+		return findBestMatchingAlbumArtist(artistName, releaseName, albums);
+	}
+
+	private Artist findBestMatchingArtist(String artistName, Collection<Artist> artists)
+	{
+		Iterator<Artist> it = artists.iterator();
+		int i = 0;
 		while(it.hasNext())
 		{
-			Album al = it.next();
-			String ar = al.getArtist();
-			matches.add(ar+"/"+al.getName());
-			if(StringReformat.equals(ar, artistName, true))
+			if(i>=Config.getSearchDepth())
 			{
-				ret = LastFmHelper.searchArtist(ar, false).iterator().next();
+				break;
+			}
+			Artist me = it.next();
+			String meName = me.getName();
+			double thresh = Config.getSearchTreshold();
+			if(StringUtilsLastFm.compare(meName, artistName)>=thresh)
+			{
+				return me;
+			}	
+		}
+		return artists.iterator().next();
+	}
+	
+	private Artist findBestMatchingAlbumArtist(String artistName, String releaseName, Collection<Album> albums)
+	{
+		List<String> matches = new ArrayList<>();
+		Artist ret = null;
+		Iterator<Album> it = albums.iterator();
+		LogLevel level = LogLevel.DEBUG;
+		int i = 0;
+		while(it.hasNext())
+		{
+			Album albumLocal = it.next();
+			String artistNameLocal = albumLocal.getArtist();
+			matches.add(artistNameLocal+"/"+albumLocal.getName());
+			if(i>=Config.getSearchDepth())
+			{
+				break;
+			}
+			
+			double thresh = Config.getSearchTresholdViaAlbum();
+			if(StringUtilsLastFm.compare(artistNameLocal, artistName)>=thresh)
+			{
+				ret = LastFmHelper.searchArtist(artistNameLocal, false).iterator().next();
 				if(log.isLogLevelEnabled(level))
 				{
 					break;
 				}
-			}
+			}	
 		}
 		log.log(level, "query for release <"+releaseName+"> returned <"+albums.size()+"> matches: "+matches);
 		return ret;
 	}
-
+	
 }
