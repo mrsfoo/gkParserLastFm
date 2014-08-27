@@ -1,15 +1,17 @@
 package com.zwb.geekology.parser.lastfm.db;
 
-import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
 import com.zwb.geekology.parser.api.db.IGkDbItemWithDesc;
 import com.zwb.geekology.parser.api.parser.IGkParsingSource;
+import com.zwb.lazyload.ILoader;
+import com.zwb.lazyload.LazyLoader;
+import com.zwb.lazyload.Ptr;
 
 import de.umass.lastfm.MusicEntry;
 
 public class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm implements IGkDbItemWithDesc
 {
-	private String summary;
-	private String description;
+	private Ptr<String> summary = new Ptr<>();
+	private Ptr<String> description = new Ptr<>();
 
 	public AbstrGkDbItemLastFmWithDesc(MusicEntry lastfmMusicEntry, IGkParsingSource source)
 	{
@@ -19,20 +21,30 @@ public class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm implements 
 	@Override
 	public String getDescriptionSummary()
 	{
-		if(this.summary==null)
-		{
-			this.summary = this.lastfmMusicEntry.getWikiSummary();
-		}
-		return this.summary;
+		return LazyLoader.loadLazy(this.summary, new SummaryLoader());
 	}
 
 	@Override
 	public String getDescription() 
 	{
-		if(this.description==null)
+		return LazyLoader.loadLazy(this.description, new DescLoader());
+	}
+	
+	class SummaryLoader implements ILoader<String>
+	{
+		@Override
+		public String load()
 		{
-			this.description = this.lastfmMusicEntry.getWikiText();
+			return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry.getWikiSummary();
 		}
-		return this.description;
+	}
+	
+	class DescLoader implements ILoader<String>
+	{
+		@Override
+		public String load()
+		{
+			return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry.getWikiText();
+		}
 	}
 }

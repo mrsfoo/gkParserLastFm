@@ -14,9 +14,11 @@ import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
+import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
+import com.zwb.lazyload.Ptr;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Tag;
@@ -26,9 +28,9 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 {
 	private IGkDbArtist artist;
 	private Album album;
-	private List<IGkDbTrack> tracks;
-	private List<String> trackNames;
-	private Date date;
+	private Ptr<List<IGkDbTrack>> tracks = new Ptr<>();
+	private Ptr<List<String>> trackNames = new Ptr<>();
+	private Ptr<Date> date = new Ptr<>();
 	
 	public GkDbReleaseLastFm(Album album)
 	{
@@ -42,9 +44,6 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 		super(album, GkParserObjectFactory.createSource(Config.getSourceString()));
 		this.album = album;
 		this.artist = artist;
-		this.album.getReleaseDate();
-		this.album.getTracks();
-		this.album.getTags();
 	}
 
 	@Override
@@ -74,25 +73,13 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 	@Override
 	public List<String> getTrackNames() 
 	{
-		if(this.trackNames==null)
-		{
-			this.trackNames = new ArrayList<>();
-			for(IGkDbTrack t: this.getTracks())
-			{
-				this.trackNames.add(t.getName());
-			}
-		}
-		return this.trackNames;
+		return LazyLoader.loadLazy(this.trackNames, new NameLoader(this.getTracks()));
 	}
 
 	@Override
 	public Date getReleaseDate() 
 	{
-		if(this.date==null)
-		{
-			this.date = LastFmHelper.searchDateForAlbum(this.album, true);
-		}
-		return this.date;
+		return LazyLoader.loadLazy(this.date, new DateLoader());
 	}
 	
 	class TrackLoader implements ILoader
@@ -124,6 +111,14 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 				tags.add(new GkDbTagLastFm(it.next()));
 			}
 			return tags;
+		}
+	}
+
+	class DateLoader implements ILoader<Date>
+	{
+		public Date load()
+		{
+			return GkDbReleaseLastFm.this.album.getReleaseDate();
 		}
 	}
 

@@ -15,6 +15,7 @@ import com.zwb.geekology.parser.api.parser.IGkParsingResultArtist;
 import com.zwb.geekology.parser.api.parser.IGkParsingResultSampler;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
 import com.zwb.geekology.parser.enums.GkParsingState;
+import com.zwb.geekology.parser.impl.GkParsingEvent;
 import com.zwb.geekology.parser.impl.GkParsingResultArtist;
 import com.zwb.geekology.parser.impl.GkParsingResultSampler;
 import com.zwb.geekology.parser.lastfm.db.GkDbArtistLastFm;
@@ -26,56 +27,72 @@ import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
 import de.umass.lastfm.Authenticator;
+import de.umass.lastfm.CallException;
 import de.umass.lastfm.Caller;
 import de.umass.lastfm.Session;
 
 public class GkParserLastFm extends AbstrGkParser implements IGkParser
 {
 	private MyLogger log = new MyLogger(this.getClass());
-
+	
 	public GkParserLastFm()
 	{
-		this.setSource("last.fm");
-
-		log.debug("creating last.fm parser");
-		String userAgent = Config.getUserAgent();
-		boolean debugMode = Config.getDebugMode();
-		String apiKey = Config.getApiKey();
-		String secret = Config.getApiKeySecret();
-		Session session;
-
-		log.debug("configuring and authenticating last.fm access with userAgent=<"+userAgent+">, apiKey=<"+apiKey+">, secret=<"+secret+">, debugMode=<"+debugMode+">");
-		Caller.getInstance().setUserAgent(userAgent);
-	    Caller.getInstance().setDebugMode(debugMode);
-	    session = Authenticator.getSession(Authenticator.getToken(apiKey), apiKey, secret);
+		try
+		{			
+			this.setSource("last.fm");
+	
+			log.debug("creating last.fm parser");
+			String userAgent = Config.getUserAgent();
+			boolean debugMode = Config.getDebugMode();
+			String apiKey = Config.getApiKey();
+			String secret = Config.getApiKeySecret();
+			Session session;
+	
+			log.debug("configuring and authenticating last.fm access with userAgent=<"+userAgent+">, apiKey=<"+apiKey+">, secret=<"+secret+">, debugMode=<"+debugMode+">");
+			Caller.getInstance().setUserAgent(userAgent);
+		    Caller.getInstance().setDebugMode(debugMode);
+		    session = Authenticator.getSession(Authenticator.getToken(apiKey), apiKey, secret);
+		}
+		catch (CallException e)
+		{
+			setConstructorEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework; probably bad internet connection: "+e.getClass().getName()+" -- "+e.getMessage());
+		}
 	}
 	
 	@Override
 	public IGkParsingResultArtist parseArtist(IGkParserQuery query) throws GkParserException
 	{
 		GkParsingResultArtist result = (GkParsingResultArtist) setResultStart(query, getSource());
-		
 		IGkDbArtist artist = null;
-		if(query.isSampler())
-		{
-//			query for sampler
-			log.debug("query for sampler "+query.getRelease());
-			result.addEvent(GkParsingEventType.ERROR_ARGUMENT, "query for sampler with artist empty");
-			result.setState(GkParsingState.ERROR);
-			setResultErrorThrow(result);
+		try
+		{			
+			if(query.isSampler())
+			{
+		//			query for sampler
+				log.debug("query for sampler "+query.getRelease());
+				result.addEvent(GkParsingEventType.ERROR_ARGUMENT, "query for sampler with artist empty");
+				result.setState(GkParsingState.ERROR);
+				setResultErrorThrow(result, null);
+			}
+			if (query.hasRelease())
+			{
+				log.debug("query for artist <"+query.getArtist()+"> with release <"+query.getRelease()+">");
+				artist = this.queryArtistViaRelease(query.getArtist(), query.getRelease(), result);
+			}
+			else
+			{
+				log.debug("query for artist <"+query.getArtist()+">");
+				artist = this.queryArtist(query.getArtist(), result);
+			}
+			result.setArtist(artist);
+			return (IGkParsingResultArtist) setResultSuccess(result);			
 		}
-		if (query.hasRelease())
+		catch (CallException e)
 		{
-			log.debug("query for artist <"+query.getArtist()+"> with release <"+query.getRelease()+">");
-			artist = this.queryArtistViaRelease(query.getArtist(), query.getRelease(), result);
+			result.addEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework; probably bad internet connection: "+e.getClass().getName()+" -- "+e.getMessage());
+			this.setResultErrorThrow(result, e);
 		}
-		else
-		{
-			log.debug("query for artist <"+query.getArtist()+">");
-			artist = this.queryArtist(query.getArtist(), result);
-		}
-		result.setArtist(artist);
-		return (IGkParsingResultArtist) setResultSuccess(result);			
+		return null;
 	}
 
 	@Override
@@ -108,7 +125,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 			return new GkDbArtistLastFm(chosen);			
 		}
 		result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "query for artist <"+artistName+"> returned <"+artists.size()+"> matches");
-		setResultErrorThrow(result);
+		setResultErrorThrow(result, null);
 		/** won't be reached */
 		return null;
 	}
@@ -150,7 +167,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	
 	private Artist queryLastFmArtistViaReleases(String artistName, String releaseName)
 	{
-		Collection<Album> albums = LastFmHelper.searchAlbum(releaseName, false);
+		Collection<Album> albums = Album.search(releaseName, Config.getApiKey());
 		if((albums==null)||(albums.size()==0))
 		{
 			return null;

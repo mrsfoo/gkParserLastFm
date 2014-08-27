@@ -5,29 +5,27 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
 import com.zwb.geekology.parser.api.db.IGkDbArtist;
 import com.zwb.geekology.parser.api.db.IGkDbRelease;
 import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.lastfm.Config;
-import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
-import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
+import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
+import com.zwb.lazyload.Ptr;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
-import de.umass.lastfm.MusicEntry;
 import de.umass.lastfm.Tag;
 
 public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGkDbArtist
 {
 	private Artist artist;
-	private List<IGkDbRelease> releases;
-	private List<IGkDbArtist> similar;
-	private List<String> releaseNames;
-	private List<String> similarsNames;
+	private Ptr<List<IGkDbRelease>> releases = new Ptr<>();
+	private Ptr<List<IGkDbArtist>> similar = new Ptr<>();
+	private Ptr<List<String>> releaseNames = new Ptr<>();
+	private Ptr<List<String>> similarsNames = new Ptr<>();
 	
 	public GkDbArtistLastFm(Artist artist)
 	{
@@ -38,17 +36,7 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGk
 	@Override
 	public List<IGkDbRelease> getReleases() 
 	{
-		if(this.releases==null)
-		{
-			this.releases = new ArrayList<>();
-			Collection<Album> albums = LastFmHelper.searchAlbumsForArtist(this.getName(), true);
-			Iterator<Album> it = albums.iterator();
-			while(it.hasNext())
-			{
-				this.releases.add(new GkDbReleaseLastFm(it.next(), this));
-			}
-		}
-		return this.releases;
+		return LazyLoader.loadLazy(this.releases, new ReleaseLoader());
 	}
 
 	@Override
@@ -60,45 +48,19 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGk
 	@Override
 	public List<IGkDbArtist> getSimilar()
 	{
-		if(this.similar == null)
-		{
-			this.similar = new ArrayList<>();
-			Collection<Artist> lfma = LastFmHelper.searchSimilarArtist(this.getName(), true);
-			Iterator<Artist> it = lfma.iterator();
-			while(it.hasNext())
-			{
-				this.similar.add(new GkDbArtistLastFm(it.next()));
-			}
-		}
-		return similar;
+		return LazyLoader.loadLazy(this.similar, new SimilarLoader());
 	}
 
 	@Override
 	public List<String> getReleaseNames() 
 	{
-		if(this.releaseNames==null)
-		{
-			this.releaseNames = new ArrayList<>();
-			for(IGkDbRelease r: this.getReleases())
-			{
-				this.releaseNames.add(r.getName());
-			}
-		}
-		return this.releaseNames;
+		return LazyLoader.loadLazy(this.releaseNames, new NameLoader(this.getReleases()));
 	}
 
 	@Override
 	public List<String> getSimilarsNames() 
 	{
-		if(this.similarsNames==null)
-		{
-			this.similarsNames = new ArrayList<>();
-			for(IGkDbArtist a: this.getSimilar())
-			{
-				this.similarsNames.add(a.getName());
-			}
-		}
-		return this.similarsNames;
+		return LazyLoader.loadLazy(this.similarsNames, new NameLoader(this.getSimilar()));
 	}
 	
 	class TagLoader implements ILoader
@@ -115,4 +77,36 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGk
 			return tags;
 		}
 	}
+	
+	class ReleaseLoader implements ILoader
+	{
+		@Override
+		public List<IGkDbRelease> load() 
+		{
+			Collection<Album> query = Artist.getTopAlbums(GkDbArtistLastFm.this.artist.getName(), Config.getApiKey());
+			List<IGkDbRelease> releases = new ArrayList<>();
+			for(Album a: query)
+			{
+				releases.add(new GkDbReleaseLastFm(a, GkDbArtistLastFm.this));
+			}
+			return releases;
+		}
+	}
+	
+	class SimilarLoader implements ILoader
+	{
+		@Override
+		public List<IGkDbArtist> load()
+		{
+			Collection<Artist> sim = Artist.getSimilar(GkDbArtistLastFm.this.artist.getName(), Config.getApiKey());
+			List<IGkDbArtist> similar = new ArrayList<>();
+			for(Artist a: sim)
+			{
+				similar.add(new GkDbArtistLastFm(a));
+			}
+			return similar;
+		}
+	}
+	
+	
 }

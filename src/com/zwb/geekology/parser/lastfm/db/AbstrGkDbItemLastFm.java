@@ -12,6 +12,7 @@ public class AbstrGkDbItemLastFm extends AbstrGkDbItem
 	public AbstrGkDbItemLastFm(MusicEntry lastfmMusicEntry, IGkParsingSource source)
 	{
 		super(lastfmMusicEntry.getName(), source);
+		this.lastfmMusicEntry = lastfmMusicEntry;
 	}
 
 }

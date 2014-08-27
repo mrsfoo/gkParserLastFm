@@ -2,26 +2,29 @@ package com.zwb.geekology.parser.lastfm.db;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
+import com.zwb.geekology.parser.api.db.IGkDbArtist;
 import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.lastfm.Config;
+import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
+import com.zwb.lazyload.ILoader;
+import com.zwb.lazyload.LazyLoader;
+import com.zwb.lazyload.Ptr;
 
 import de.umass.lastfm.Tag;
 
 public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 {
 	private Tag tag;
-	private String summary;
-	private String description;
-	private List<IGkDbTag> similar;
-	private List<String> similarNames;
-	
+	private Ptr<String> summary = new Ptr<>();
+	private Ptr<String> description = new Ptr<>();
+	private Ptr<List<IGkDbTag>> similar = new Ptr<>();
+	private Ptr<List<String>> similarNames = new Ptr<>();
+	private Ptr<Double> weight = new Ptr<>();
 	
 	public GkDbTagLastFm(Tag tag)
 	{
@@ -36,51 +39,60 @@ public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 	}
 
 	@Override
-	public String getDescriptionSummary()
-	{
-		if(this.summary==null)
-		{
-			this.summary = this.tag.getWikiSummary();
-		}
-		return this.summary;
-	}
-
-	@Override
-	public String getDescription() 
-	{
-		if(this.description==null)
-		{
-			this.description = this.tag.getWikiText();
-		}
-		return this.description;
-	}
-
-	@Override
 	public List<IGkDbTag> getSimilar()
 	{
-		if(this.similar==null)
-		{
-			this.similar = new ArrayList<>();
-			Collection<Tag> lfmt = LastFmHelper.searchSimilarTags(this.getName(), true);
-			for(Tag t: lfmt)
-			{
-				this.similar.add(new GkDbTagLastFm(t));
-			}
-		}
-		return this.similar;
+		return LazyLoader.loadLazy(this.similar, new SimilarLoader());
 	}
 
 	@Override
 	public List<String> getSimilarsNames() 
 	{
-		if(this.similarNames==null)
-		{
-			this.similarNames = new ArrayList<>();
-			for(IGkDbTag t: this.getSimilar())
-			{
-				this.similarNames.add(t.getName());
-			}
-		}
-		return this.similarNames;
+		return LazyLoader.loadLazy(this.similarNames, new NameLoader(this.getSimilar()));
 	}
+	
+	@Override
+	public String getDescriptionSummary()
+	{
+		return LazyLoader.loadLazy(this.summary, new SummaryLoader());
+	}
+
+	@Override
+	public String getDescription() 
+	{
+		return LazyLoader.loadLazy(this.description, new DescLoader());
+	}
+	
+	class SummaryLoader implements ILoader<String>
+	{
+		@Override
+		public String load()
+		{
+			return GkDbTagLastFm.this.tag.getWikiSummary();
+		}
+	}
+	
+	class DescLoader implements ILoader<String>
+	{
+		@Override
+		public String load()
+		{
+			return GkDbTagLastFm.this.tag.getWikiText();
+		}
+	}
+	
+	class SimilarLoader implements ILoader
+	{
+		@Override
+		public List<IGkDbTag> load()
+		{
+			Collection<Tag> sim = Tag.getSimilar(GkDbTagLastFm.this.tag.getName(), Config.getApiKey());
+			List<IGkDbTag> similar = new ArrayList<>();
+			for(Tag t: sim)
+			{
+				similar.add(new GkDbTagLastFm(t));
+			}
+			return similar;
+		}
+	}
+
 }

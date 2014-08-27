@@ -13,6 +13,7 @@ import junit.framework.TestCase;
 
 import com.zwb.geekology.parser.api.db.IGkDbArtist;
 import com.zwb.geekology.parser.api.exception.GkParserException;
+import com.zwb.geekology.parser.api.exception.GkParserExceptionExternalError;
 import com.zwb.geekology.parser.api.exception.GkParserExceptionIllegalArgument;
 import com.zwb.geekology.parser.api.exception.GkParserExceptionNoResultFound;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
@@ -73,11 +74,11 @@ public class TestSandbox extends TestCase
 			{
 				result = parser.parseArtist(GkParserObjectFactory.createQueryForArtist(e.getKey(), e.getValue()));
 			}
-			catch (GkParserExceptionNoResultFound ex)
+			catch (GkParserExceptionNoResultFound | GkParserExceptionIllegalArgument ex)
 			{
 				result = (IGkParsingResultArtist) ex.getResult();
 			}
-			catch (GkParserExceptionIllegalArgument ex)
+			catch (GkParserExceptionExternalError ex)
 			{
 				result = (IGkParsingResultArtist) ex.getResult();
 			}
