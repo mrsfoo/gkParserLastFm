@@ -1,11 +1,18 @@
 package com.zwb.geekology.parser.lastfm.db;
 
-import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
-import com.zwb.geekology.parser.api.parser.IGkParsingSource;
+import java.util.List;
 
+import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
+import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
+import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
+import com.zwb.geekology.parser.api.parser.IGkParsingSource;
+import com.zwb.geekology.parser.enums.GkParsingEventType;
+import com.zwb.geekology.parser.lastfm.Config;
+
+import de.umass.lastfm.CallException;
 import de.umass.lastfm.MusicEntry;
 
-public class AbstrGkDbItemLastFm extends AbstrGkDbItem
+public abstract class AbstrGkDbItemLastFm extends AbstrGkDbItem
 {
 	protected MusicEntry lastfmMusicEntry;
 
@@ -13,6 +20,12 @@ public class AbstrGkDbItemLastFm extends AbstrGkDbItem
 	{
 		super(lastfmMusicEntry.getName(), source);
 		this.lastfmMusicEntry = lastfmMusicEntry;
+	}
+	
+	@Override
+	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
+	{
+		return events;
 	}
 
 }
