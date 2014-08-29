@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
 import com.zwb.geekology.parser.api.db.IGkDbArtist;
 import com.zwb.geekology.parser.api.db.IGkDbRelease;
@@ -113,8 +114,12 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 		public List<IGkDbTrack> load()
 		{
 			Collection<Track> t = GkDbReleaseLastFm.this.album.getTracks();
-			Iterator<Track> it = t.iterator();
 			List<IGkDbTrack> tracks = new ArrayList<>();
+			if(t==null)
+			{
+				return tracks;
+			}
+			Iterator<Track> it = t.iterator();
 			int i = 1;
 			while(it.hasNext())
 			{
