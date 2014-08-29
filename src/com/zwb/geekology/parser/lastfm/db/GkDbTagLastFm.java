@@ -8,6 +8,8 @@ import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
 import com.zwb.geekology.parser.api.db.IGkDbArtist;
 import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
+import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
+import com.zwb.geekology.parser.enums.GkParsingEventType;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
@@ -15,6 +17,7 @@ import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
 
+import de.umass.lastfm.CallException;
 import de.umass.lastfm.Tag;
 
 public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
@@ -35,7 +38,7 @@ public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 	@Override
 	public double getWeight()
 	{
-		return this.tag.getCount();
+		return LazyLoader.loadLazy(this.weight, new WeightLoader());
 	}
 
 	@Override
@@ -62,6 +65,44 @@ public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 		return LazyLoader.loadLazy(this.description, new DescLoader());
 	}
 	
+	@Override
+	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
+	{
+		try
+		{
+			this.getDescription();
+		}
+		catch(CallException e)
+		{
+			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <description> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
+		}
+		try
+		{
+			this.getDescriptionSummary();
+		}
+		catch(CallException e)
+		{
+			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <summary> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
+		}
+		try
+		{
+			this.getSimilar();
+		}
+		catch(CallException e)
+		{
+			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <similar> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
+		}
+		try
+		{
+			this.getWeight();
+		}
+		catch(CallException e)
+		{
+			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <weight> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
+		}
+		return events;
+	}
+
 	class SummaryLoader implements ILoader<String>
 	{
 		@Override
@@ -77,6 +118,15 @@ public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 		public String load()
 		{
 			return GkDbTagLastFm.this.tag.getWikiText();
+		}
+	}
+	
+	class WeightLoader implements ILoader<Double>
+	{
+		@Override
+		public Double load()
+		{
+			return new Double(GkDbTagLastFm.this.tag.getCount());
 		}
 	}
 	

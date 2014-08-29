@@ -12,6 +12,8 @@ import com.zwb.geekology.parser.api.db.IGkDbRelease;
 import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
+import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
+import com.zwb.geekology.parser.enums.GkParsingEventType;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
 import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
@@ -21,6 +23,7 @@ import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
 
 import de.umass.lastfm.Album;
+import de.umass.lastfm.CallException;
 import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 
@@ -82,6 +85,29 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 		return LazyLoader.loadLazy(this.date, new DateLoader());
 	}
 	
+	@Override
+	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
+	{
+		try
+		{
+			this.getReleaseDate();
+		}
+		catch(CallException e)
+		{
+			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <release date> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
+		}
+		try
+		{
+			this.getTracks();
+		}
+		catch(CallException e)
+		{
+			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <tracks> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
+		}
+		super.prefetch(events);
+		return events;
+	}
+
 	class TrackLoader implements ILoader
 	{
 		public List<IGkDbTrack> load()
@@ -120,6 +146,12 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 		{
 			return GkDbReleaseLastFm.this.album.getReleaseDate();
 		}
+	}
+
+	@Override
+	public boolean hasReleaseDate()
+	{
+		return (this.getReleaseDate()!=null);
 	}
 
 }

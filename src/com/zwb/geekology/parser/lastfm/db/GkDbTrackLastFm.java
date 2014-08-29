@@ -11,11 +11,14 @@ import com.zwb.geekology.parser.api.db.IGkDbRelease;
 import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
+import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
+import com.zwb.geekology.parser.enums.GkParsingEventType;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
 
+import de.umass.lastfm.CallException;
 import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 
@@ -34,9 +37,6 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
 		this.artist = artist;
 		this.release = release;
 		this.trackNo = trackNo;
-		
-		this.track.getLastFmInfo(Config.getApiKey());
-		this.track.getLocation();
 	}
 	
 	@Override
@@ -67,6 +67,27 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
 	public List<IGkDbTag> getStyleTags()
 	{
 		return LazyLoader.loadLazy(this.tags, new TagLoader());
+	}
+
+	@Override
+	public boolean hasDuration()
+	{
+		return (this.getDuration()!=-1);
+	}
+
+	@Override
+	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
+	{
+		try
+		{
+			this.getDuration();
+		}
+		catch(CallException e)
+		{
+			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <duration> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
+		}
+		super.prefetch(events);
+		return events;
 	}
 
 	class DurationLoader implements ILoader<Integer>
