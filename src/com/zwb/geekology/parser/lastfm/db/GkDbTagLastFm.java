@@ -22,89 +22,121 @@ import de.umass.lastfm.Tag;
 
 public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 {
-	private Tag tag;
-	private Ptr<String> summary = new Ptr<>();
-	private Ptr<String> description = new Ptr<>();
-	private Ptr<List<IGkDbTag>> similar = new Ptr<>();
-	private Ptr<List<String>> similarNames = new Ptr<>();
-	private Ptr<Double> weight = new Ptr<>();
-	
-	public GkDbTagLastFm(Tag tag)
+    private Tag tag;
+    private Ptr<String> summary = new Ptr<>();
+    private Ptr<String> description = new Ptr<>();
+    private Ptr<List<IGkDbTag>> similar = new Ptr<>();
+    private Ptr<List<String>> similarNames = new Ptr<>();
+    private Ptr<Double> weight = new Ptr<>();
+    
+    public GkDbTagLastFm(Tag tag)
+    {
+	super(tag.getName(), GkParserObjectFactory.createSource(Config.getSourceString()));
+	this.tag = tag;
+    }
+    
+    @Override
+    public Double getWeight()
+    {
+	try
 	{
-		super(tag.getName(), GkParserObjectFactory.createSource(Config.getSourceString()));
-		this.tag = tag;
+	    return LazyLoader.loadLazy(this.weight, new WeightLoader());
 	}
-
+	catch (CallException e)
+	{
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading weight of tag <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
+	}
+    }
+    
+    @Override
+    public List<IGkDbTag> getSimilar()
+    {
+	try
+	{
+	    return LazyLoader.loadLazy(this.similar, new SimilarLoader());
+	}
+	catch (CallException e)
+	{
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading similar tags of tag <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
+	}
+    }
+    
+    @Override
+    public List<String> getSimilarsNames()
+    {
+	return LazyLoader.loadLazy(this.similarNames, new NameLoader(this.getSimilar()));
+    }
+    
+    @Override
+    public String getDescriptionSummary()
+    {
+	try
+	{
+	    return LazyLoader.loadLazy(this.summary, new SummaryLoader());
+	}
+	catch (CallException e)
+	{
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading description summary of tag <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
+	}
+    }
+    
+    @Override
+    public String getDescription()
+    {
+	try
+	{
+	    return LazyLoader.loadLazy(this.description, new DescLoader());
+	}
+	catch (CallException e)
+	{
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading description of tag <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
+	}
+    }
+    
+    class SummaryLoader implements ILoader<String>
+    {
 	@Override
-	public double getWeight()
+	public String load()
 	{
-		return LazyLoader.loadLazy(this.weight, new WeightLoader());
+	    return GkDbTagLastFm.this.tag.getWikiSummary();
 	}
-
+    }
+    
+    class DescLoader implements ILoader<String>
+    {
 	@Override
-	public List<IGkDbTag> getSimilar()
+	public String load()
 	{
-		return LazyLoader.loadLazy(this.similar, new SimilarLoader());
+	    return GkDbTagLastFm.this.tag.getWikiText();
 	}
-
+    }
+    
+    class WeightLoader implements ILoader<Double>
+    {
 	@Override
-	public List<String> getSimilarsNames() 
+	public Double load()
 	{
-		return LazyLoader.loadLazy(this.similarNames, new NameLoader(this.getSimilar()));
+	    return new Double(GkDbTagLastFm.this.tag.getCount());
 	}
-	
+    }
+    
+    class SimilarLoader implements ILoader
+    {
 	@Override
-	public String getDescriptionSummary()
+	public List<IGkDbTag> load()
 	{
-		return LazyLoader.loadLazy(this.summary, new SummaryLoader());
+	    Collection<Tag> sim = Tag.getSimilar(GkDbTagLastFm.this.tag.getName(), Config.getApiKey());
+	    List<IGkDbTag> similar = new ArrayList<>();
+	    for (Tag t : sim)
+	    {
+		similar.add(new GkDbTagLastFm(t));
+	    }
+	    return similar;
 	}
-
-	@Override
-	public String getDescription() 
-	{
-		return LazyLoader.loadLazy(this.description, new DescLoader());
-	}
-	
-	class SummaryLoader implements ILoader<String>
-	{
-		@Override
-		public String load()
-		{
-			return GkDbTagLastFm.this.tag.getWikiSummary();
-		}
-	}
-	
-	class DescLoader implements ILoader<String>
-	{
-		@Override
-		public String load()
-		{
-			return GkDbTagLastFm.this.tag.getWikiText();
-		}
-	}
-	
-	class WeightLoader implements ILoader<Double>
-	{
-		@Override
-		public Double load()
-		{
-			return new Double(GkDbTagLastFm.this.tag.getCount());
-		}
-	}
-	
-	class SimilarLoader implements ILoader
-	{
-		@Override
-		public List<IGkDbTag> load()
-		{
-			Collection<Tag> sim = Tag.getSimilar(GkDbTagLastFm.this.tag.getName(), Config.getApiKey());
-			List<IGkDbTag> similar = new ArrayList<>();
-			for(Tag t: sim)
-			{
-				similar.add(new GkDbTagLastFm(t));
-			}
-			return similar;
-		}
-	}
-
+    }
+    
 }

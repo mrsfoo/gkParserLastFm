@@ -30,110 +30,134 @@ import de.umass.lastfm.Track;
 
 public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IGkDbRelease
 {
-	private IGkDbArtist artist;
-	private Album album;
-	private Ptr<List<IGkDbTrack>> tracks = new Ptr<>();
-	private Ptr<List<String>> trackNames = new Ptr<>();
-	private Ptr<Date> date = new Ptr<>();
-	
-	public GkDbReleaseLastFm(Album album)
+    private IGkDbArtist artist;
+    private Album album;
+    private Ptr<List<IGkDbTrack>> tracks = new Ptr<>();
+    private Ptr<List<String>> trackNames = new Ptr<>();
+    private Ptr<Date> date = new Ptr<>();
+    
+    public GkDbReleaseLastFm(Album album)
+    {
+	super(album, GkParserObjectFactory.createSource(Config.getSourceString()));
+	this.album = album;
+	throw new RuntimeException("NOT IMPLEMENTED YET!");
+    }
+    
+    public GkDbReleaseLastFm(Album album, IGkDbArtist artist)
+    {
+	super(album, GkParserObjectFactory.createSource(Config.getSourceString()));
+	this.album = album;
+	this.artist = artist;
+    }
+    
+    @Override
+    public boolean isSampler()
+    {
+	// TODO
+	throw new RuntimeException("NOT IMPLEMENTED YET!");
+    }
+    
+    @Override
+    public IGkDbArtist getArtist()
+    {
+	return this.artist;
+    }
+    
+    @Override
+    public List<IGkDbTag> getStyleTags()
+    {
+	try
 	{
-		super(album, GkParserObjectFactory.createSource(Config.getSourceString()));
-		this.album = album;
-		throw new RuntimeException("NOT IMPLEMENTED YET!");
+	    return LazyLoader.loadLazy(this.tags, new TagLoader());
 	}
-
-	public GkDbReleaseLastFm(Album album, IGkDbArtist artist)
+	catch (CallException e)
 	{
-		super(album, GkParserObjectFactory.createSource(Config.getSourceString()));
-		this.album = album;
-		this.artist = artist;
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading style tags of release <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
 	}
-
-	@Override
-	public boolean isSampler()
+    }
+    
+    public List<IGkDbTrack> getTracks()
+    {
+	try
 	{
-		//TODO
-		throw new RuntimeException("NOT IMPLEMENTED YET!");
+	    return LazyLoader.loadLazy(this.tags, new TrackLoader());
 	}
-
-	@Override
-	public IGkDbArtist getArtist()
+	catch (CallException e)
 	{
-		return this.artist;
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading tracks of release <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
 	}
-
-	@Override
-	public List<IGkDbTag> getStyleTags()
+    }
+    
+    @Override
+    public List<String> getTrackNames()
+    {
+	return LazyLoader.loadLazy(this.trackNames, new NameLoader(this.getTracks()));
+    }
+    
+    @Override
+    public Date getReleaseDate()
+    {
+	try
 	{
-		return LazyLoader.loadLazy(this.tags, new TagLoader());
+	    return LazyLoader.loadLazy(this.date, new DateLoader());
 	}
-
-	public List<IGkDbTrack> getTracks() 
+	catch (CallException e)
 	{
-		return LazyLoader.loadLazy(this.tags, new TrackLoader());
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading release date of release <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
 	}
-
-	@Override
-	public List<String> getTrackNames() 
+    }
+    
+    class TrackLoader implements ILoader
+    {
+	public List<IGkDbTrack> load()
 	{
-		return LazyLoader.loadLazy(this.trackNames, new NameLoader(this.getTracks()));
+	    Collection<Track> t = GkDbReleaseLastFm.this.album.getTracks();
+	    List<IGkDbTrack> tracks = new ArrayList<>();
+	    if (t == null)
+	    {
+		return tracks;
+	    }
+	    Iterator<Track> it = t.iterator();
+	    int i = 1;
+	    while (it.hasNext())
+	    {
+		tracks.add(new GkDbTrackLastFm(it.next(), GkDbReleaseLastFm.this.getArtist(), GkDbReleaseLastFm.this, i));
+		i++;
+	    }
+	    return tracks;
 	}
-
-	@Override
-	public Date getReleaseDate() 
+    }
+    
+    class TagLoader implements ILoader
+    {
+	public List<IGkDbTag> load()
 	{
-		return LazyLoader.loadLazy(this.date, new DateLoader());
+	    Collection<Tag> t = Album.getTopTags(GkDbReleaseLastFm.this.getArtist().getName(), GkDbReleaseLastFm.this.getName(), Config.getApiKey());
+	    Iterator<Tag> it = t.iterator();
+	    List<IGkDbTag> tags = new ArrayList<>();
+	    while (it.hasNext())
+	    {
+		tags.add(new GkDbTagLastFm(it.next()));
+	    }
+	    return tags;
 	}
-
-	class TrackLoader implements ILoader
+    }
+    
+    class DateLoader implements ILoader<Date>
+    {
+	public Date load()
 	{
-		public List<IGkDbTrack> load()
-		{
-			Collection<Track> t = GkDbReleaseLastFm.this.album.getTracks();
-			List<IGkDbTrack> tracks = new ArrayList<>();
-			if(t==null)
-			{
-				return tracks;
-			}
-			Iterator<Track> it = t.iterator();
-			int i = 1;
-			while(it.hasNext())
-			{
-				tracks.add(new GkDbTrackLastFm(it.next(), GkDbReleaseLastFm.this.getArtist(), GkDbReleaseLastFm.this, i));
-				i++;
-			}
-			return tracks;
-		}
+	    return GkDbReleaseLastFm.this.album.getReleaseDate();
 	}
-
-	class TagLoader implements ILoader
-	{
-		public List<IGkDbTag> load()
-		{
-			Collection<Tag> t = Album.getTopTags(GkDbReleaseLastFm.this.getArtist().getName(), GkDbReleaseLastFm.this.getName(), Config.getApiKey());
-			Iterator<Tag> it = t.iterator();
-			List<IGkDbTag> tags = new ArrayList<>();
-			while(it.hasNext())
-			{
-				tags.add(new GkDbTagLastFm(it.next()));
-			}
-			return tags;
-		}
-	}
-
-	class DateLoader implements ILoader<Date>
-	{
-		public Date load()
-		{
-			return GkDbReleaseLastFm.this.album.getReleaseDate();
-		}
-	}
-
-	@Override
-	public boolean hasReleaseDate()
-	{
-		return (this.getReleaseDate()!=null);
-	}
-
+    }
+    
+    @Override
+    public boolean hasReleaseDate()
+    {
+	return (this.getReleaseDate() != null);
+    }
+    
 }

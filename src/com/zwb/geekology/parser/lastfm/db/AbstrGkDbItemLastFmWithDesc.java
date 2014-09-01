@@ -15,14 +15,12 @@ import com.zwb.lazyload.Ptr;
 import de.umass.lastfm.CallException;
 import de.umass.lastfm.MusicEntry;
 
-public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm
-	implements IGkDbItemWithDesc
+public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm implements IGkDbItemWithDesc
 {
     private Ptr<String> summary = new Ptr<>();
     private Ptr<String> description = new Ptr<>();
     
-    public AbstrGkDbItemLastFmWithDesc(MusicEntry lastfmMusicEntry,
-	    IGkParsingSource source)
+    public AbstrGkDbItemLastFmWithDesc(MusicEntry lastfmMusicEntry, IGkParsingSource source)
     {
 	super(lastfmMusicEntry, source);
     }
@@ -30,13 +28,29 @@ public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm
     @Override
     public String getDescriptionSummary()
     {
-	return LazyLoader.loadLazy(this.summary, new SummaryLoader());
+	try
+	{
+	    return LazyLoader.loadLazy(this.summary, new SummaryLoader());
+	}
+	catch (CallException e)
+	{
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading description summary of item <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
+	}
     }
     
     @Override
     public String getDescription()
     {
-	return LazyLoader.loadLazy(this.description, new DescLoader());
+	try
+	{
+	    return LazyLoader.loadLazy(this.description, new DescLoader());
+	}
+	catch (CallException e)
+	{
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading description of item <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
+	}
     }
     
     class SummaryLoader implements ILoader<String>
@@ -44,8 +58,7 @@ public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm
 	@Override
 	public String load()
 	{
-	    return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry
-		    .getWikiSummary();
+	    return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry.getWikiSummary();
 	}
     }
     
@@ -54,8 +67,7 @@ public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm
 	@Override
 	public String load()
 	{
-	    return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry
-		    .getWikiText();
+	    return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry.getWikiText();
 	}
     }
 }

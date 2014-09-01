@@ -24,78 +24,93 @@ import de.umass.lastfm.Track;
 
 public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkDbTrack
 {
-	private Track track;
-	private IGkDbRelease release;
-	private IGkDbArtist artist;
-	private int trackNo;
-	private Ptr<Integer> duration = new Ptr<Integer>();
-	
-	public GkDbTrackLastFm(Track track, IGkDbArtist artist, IGkDbRelease release, int trackNo)
+    private Track track;
+    private IGkDbRelease release;
+    private IGkDbArtist artist;
+    private Integer trackNo;
+    private Ptr<Integer> duration = new Ptr<Integer>();
+    
+    public GkDbTrackLastFm(Track track, IGkDbArtist artist, IGkDbRelease release, int trackNo)
+    {
+	super(track, GkParserObjectFactory.createSource(Config.getSourceString()));
+	this.track = track;
+	this.artist = artist;
+	this.release = release;
+	this.trackNo = trackNo;
+    }
+    
+    @Override
+    public int getTrackNo()
+    {
+	return this.trackNo;
+    }
+    
+    @Override
+    public IGkDbRelease getRelease()
+    {
+	return this.release;
+    }
+    
+    @Override
+    public IGkDbArtist getArtist()
+    {
+	return this.artist;
+    }
+    
+    @Override
+    public Integer getDuration()
+    {
+	try
 	{
-		super(track, GkParserObjectFactory.createSource(Config.getSourceString()));
-		this.track = track;
-		this.artist = artist;
-		this.release = release;
-		this.trackNo = trackNo;
+	    return LazyLoader.loadLazy(this.duration, new DurationLoader());
 	}
-	
-	@Override
-	public int getTrackNo()
+	catch (CallException e)
 	{
-		return this.trackNo;
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading duration of track <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
 	}
-
-	@Override
-	public IGkDbRelease getRelease() 
+    }
+    
+    @Override
+    public List<IGkDbTag> getStyleTags()
+    {
+	try
 	{
-		return this.release;
+	    return LazyLoader.loadLazy(this.tags, new TagLoader());
 	}
-
-	@Override
-	public IGkDbArtist getArtist()
+	catch (CallException e)
 	{
-		return this.artist;
+	    this.addEvent(GkParserObjectFactory.createParsingEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework while loading style tags of track <" + this.getName() + ">; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage(), this.getSource()));
+	    return null;
 	}
-
-	@Override
-	public int getDuration()
+    }
+    
+    @Override
+    public boolean hasDuration()
+    {
+	return (this.getDuration() != -1);
+    }
+    
+    class DurationLoader implements ILoader<Integer>
+    {
+	public Integer load()
 	{
-		return LazyLoader.loadLazy(this.duration, new DurationLoader());
+	    return GkDbTrackLastFm.this.track.getDuration();
 	}
-
-	@Override
-	public List<IGkDbTag> getStyleTags()
+    }
+    
+    class TagLoader implements ILoader
+    {
+	public List<IGkDbTag> load()
 	{
-		return LazyLoader.loadLazy(this.tags, new TagLoader());
+	    Collection<Tag> t = Track.getTopTags(GkDbTrackLastFm.this.getArtist().getName(), GkDbTrackLastFm.this.getName(), Config.getApiKey());
+	    Iterator<Tag> it = t.iterator();
+	    List<IGkDbTag> tags = new ArrayList<>();
+	    while (it.hasNext())
+	    {
+		tags.add(new GkDbTagLastFm(it.next()));
+	    }
+	    return tags;
 	}
-
-	@Override
-	public boolean hasDuration()
-	{
-		return (this.getDuration()!=-1);
-	}
-
-	class DurationLoader implements ILoader<Integer>
-	{
-		public Integer load()
-		{
-			return GkDbTrackLastFm.this.track.getDuration();
-		}
-	}
-
-	class TagLoader implements ILoader
-	{
-		public List<IGkDbTag> load()
-		{
-			Collection<Tag> t = Track.getTopTags(GkDbTrackLastFm.this.getArtist().getName(), GkDbTrackLastFm.this.getName(), Config.getApiKey());
-			Iterator<Tag> it = t.iterator();
-			List<IGkDbTag> tags = new ArrayList<>();
-			while(it.hasNext())
-			{
-				tags.add(new GkDbTagLastFm(it.next()));
-			}
-			return tags;
-		}
-	}
+    }
 }
-
