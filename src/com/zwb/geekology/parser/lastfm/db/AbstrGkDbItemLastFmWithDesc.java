@@ -15,66 +15,47 @@ import com.zwb.lazyload.Ptr;
 import de.umass.lastfm.CallException;
 import de.umass.lastfm.MusicEntry;
 
-public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm implements IGkDbItemWithDesc
+public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm
+	implements IGkDbItemWithDesc
 {
-	private Ptr<String> summary = new Ptr<>();
-	private Ptr<String> description = new Ptr<>();
-
-	public AbstrGkDbItemLastFmWithDesc(MusicEntry lastfmMusicEntry, IGkParsingSource source)
-	{
-		super(lastfmMusicEntry, source);
-	}
-
+    private Ptr<String> summary = new Ptr<>();
+    private Ptr<String> description = new Ptr<>();
+    
+    public AbstrGkDbItemLastFmWithDesc(MusicEntry lastfmMusicEntry,
+	    IGkParsingSource source)
+    {
+	super(lastfmMusicEntry, source);
+    }
+    
+    @Override
+    public String getDescriptionSummary()
+    {
+	return LazyLoader.loadLazy(this.summary, new SummaryLoader());
+    }
+    
+    @Override
+    public String getDescription()
+    {
+	return LazyLoader.loadLazy(this.description, new DescLoader());
+    }
+    
+    class SummaryLoader implements ILoader<String>
+    {
 	@Override
-	public String getDescriptionSummary()
+	public String load()
 	{
-		return LazyLoader.loadLazy(this.summary, new SummaryLoader());
+	    return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry
+		    .getWikiSummary();
 	}
-
+    }
+    
+    class DescLoader implements ILoader<String>
+    {
 	@Override
-	public String getDescription() 
+	public String load()
 	{
-		return LazyLoader.loadLazy(this.description, new DescLoader());
+	    return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry
+		    .getWikiText();
 	}
-	
-	@Override
-	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
-	{
-		try
-		{
-			this.getDescription();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <description> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		try
-		{
-			this.getDescriptionSummary();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <summary> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		super.prefetch(events);
-		return events;
-	}
-
-	class SummaryLoader implements ILoader<String>
-	{
-		@Override
-		public String load()
-		{
-			return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry.getWikiSummary();
-		}
-	}
-	
-	class DescLoader implements ILoader<String>
-	{
-		@Override
-		public String load()
-		{
-			return AbstrGkDbItemLastFmWithDesc.this.lastfmMusicEntry.getWikiText();
-		}
-	}
+    }
 }

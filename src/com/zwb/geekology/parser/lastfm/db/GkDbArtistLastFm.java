@@ -66,29 +66,6 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGk
 		return LazyLoader.loadLazy(this.similarsNames, new NameLoader(this.getSimilar()));
 	}
 	
-	@Override
-	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
-	{
-		try
-		{
-			this.getReleases();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <releases> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		try
-		{
-			this.getSimilar();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <similar> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		super.prefetch(events);
-		return events;
-	}
-
 	class TagLoader implements ILoader
 	{
 		public List<IGkDbTag> load()

@@ -65,44 +65,6 @@ public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 		return LazyLoader.loadLazy(this.description, new DescLoader());
 	}
 	
-	@Override
-	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
-	{
-		try
-		{
-			this.getDescription();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <description> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		try
-		{
-			this.getDescriptionSummary();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <summary> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		try
-		{
-			this.getSimilar();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <similar> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		try
-		{
-			this.getWeight();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <weight> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		return events;
-	}
-
 	class SummaryLoader implements ILoader<String>
 	{
 		@Override

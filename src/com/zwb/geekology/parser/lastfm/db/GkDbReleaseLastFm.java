@@ -85,29 +85,6 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 	{
 		return LazyLoader.loadLazy(this.date, new DateLoader());
 	}
-	
-	@Override
-	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
-	{
-		try
-		{
-			this.getReleaseDate();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <release date> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		try
-		{
-			this.getTracks();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <tracks> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		super.prefetch(events);
-		return events;
-	}
 
 	class TrackLoader implements ILoader
 	{

@@ -38,21 +38,6 @@ public abstract class AbstrGkDbItemLastFmWithTags extends AbstrGkDbItemLastFmWit
 	}
 
 	@Override
-	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
-	{
-		try
-		{
-			this.getStyleTags();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <tags> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		super.prefetch(events);
-		return events;
-	}
-
-	@Override
 	public abstract List<IGkDbTag> getStyleTags();
 }
 

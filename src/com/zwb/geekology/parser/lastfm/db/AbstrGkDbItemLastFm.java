@@ -22,10 +22,4 @@ public abstract class AbstrGkDbItemLastFm extends AbstrGkDbItem
 		this.lastfmMusicEntry = lastfmMusicEntry;
 	}
 	
-	@Override
-	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
-	{
-		return events;
-	}
-
 }

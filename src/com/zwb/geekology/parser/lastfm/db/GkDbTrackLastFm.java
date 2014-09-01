@@ -75,21 +75,6 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
 		return (this.getDuration()!=-1);
 	}
 
-	@Override
-	public List<IGkParsingEvent> prefetch(List<IGkParsingEvent> events) 
-	{
-		try
-		{
-			this.getDuration();
-		}
-		catch(CallException e)
-		{
-			events.add(GkParserObjectFactory.createParsingEvent(GkParsingEventType.ATTRIBUTE_NOT_FOUND, "attribute <duration> of item <"+this.getName()+"> not found",  GkParserObjectFactory.createSource(Config.getSourceString())));
-		}
-		super.prefetch(events);
-		return events;
-	}
-
 	class DurationLoader implements ILoader<Integer>
 	{
 		public Integer load()
