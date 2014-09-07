@@ -12,12 +12,15 @@ import java.util.Map.Entry;
 import junit.framework.TestCase;
 
 import com.zwb.geekology.parser.api.db.IGkDbArtist;
+import com.zwb.geekology.parser.api.db.PrintDetailLevel;
 import com.zwb.geekology.parser.api.exception.GkParserException;
 import com.zwb.geekology.parser.api.exception.GkParserExceptionExternalError;
 import com.zwb.geekology.parser.api.exception.GkParserExceptionIllegalArgument;
 import com.zwb.geekology.parser.api.exception.GkParserExceptionNoResultFound;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
+import com.zwb.geekology.parser.api.parser.IGkParsingResult;
 import com.zwb.geekology.parser.api.parser.IGkParsingResultArtist;
+import com.zwb.geekology.parser.impl.DbItemFileWriter;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.GkParserLastFm;
 import com.zwb.stringutil.StringReformat;
@@ -48,6 +51,8 @@ public class TestSandbox extends TestCase
 
 		Map<String, IGkParsingResultArtist> resultsArtistQuery = new HashMap<>();
 		Map<String, IGkParsingResultArtist> resultsReleaseQuery = new HashMap<>();
+		List<IGkParsingResult> resultsListArtistQuery = new ArrayList<>();
+		List<IGkParsingResult> resultsListReleaseQuery = new ArrayList<>();
 		for(Entry<String,String> e: input.entrySet())
 		{
 			System.out.println("parsing for --> "+e.getKey());
@@ -65,6 +70,7 @@ public class TestSandbox extends TestCase
 				result = (IGkParsingResultArtist) ex.getResult();
 			}
 			resultsArtistQuery.put(e.getKey(), result);
+			resultsListArtistQuery.add(result);
 		}
 		for(Entry<String,String> e: input.entrySet())
 		{
@@ -74,15 +80,16 @@ public class TestSandbox extends TestCase
 			{
 				result = parser.parseArtist(GkParserObjectFactory.createQueryForArtist(e.getKey(), e.getValue()));
 			}
-			catch (GkParserExceptionNoResultFound | GkParserExceptionIllegalArgument ex)
+			catch (GkParserExceptionNoResultFound ex)
 			{
 				result = (IGkParsingResultArtist) ex.getResult();
 			}
-			catch (GkParserExceptionExternalError ex)
+			catch (GkParserExceptionExternalError | GkParserExceptionIllegalArgument ex)
 			{
 				result = (IGkParsingResultArtist) ex.getResult();
 			}
 			resultsReleaseQuery.put(e.getKey(), result);
+			resultsListReleaseQuery.add(result);
 			if(result!=null && result.getArtist()!=null) result.getArtist().getStyleTags();
 		}
 		
@@ -129,6 +136,10 @@ public class TestSandbox extends TestCase
 		System.out.println(details);
 
 		System.out.println(tab.printFormatted());
+		
+		DbItemFileWriter.writeResultsToFile("TestResults/resultsArtistQuery.txt", resultsListArtistQuery, PrintDetailLevel.LOW, false);
+		DbItemFileWriter.writeResultsToFile("TestResults/resultsReleaseQuery.txt", resultsListReleaseQuery, PrintDetailLevel.LOW, false);
+		
 	}
 	
 	

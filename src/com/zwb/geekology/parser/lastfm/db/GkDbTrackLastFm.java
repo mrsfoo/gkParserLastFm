@@ -13,10 +13,12 @@ import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
+import com.zwb.geekology.parser.impl.DbItemFormatter;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
+import com.zwb.tab.Tab;
 
 import de.umass.lastfm.CallException;
 import de.umass.lastfm.Tag;
@@ -40,7 +42,7 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
     }
     
     @Override
-    public int getTrackNo()
+    public Integer getTrackNo()
     {
 	return this.trackNo;
     }

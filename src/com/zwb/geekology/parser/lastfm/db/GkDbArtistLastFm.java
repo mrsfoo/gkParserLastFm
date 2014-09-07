@@ -16,6 +16,7 @@ import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
+import com.zwb.tab.Tab;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;

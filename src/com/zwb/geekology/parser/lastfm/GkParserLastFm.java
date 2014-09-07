@@ -33,198 +33,199 @@ import de.umass.lastfm.Session;
 
 public class GkParserLastFm extends AbstrGkParser implements IGkParser
 {
-	private MyLogger log = new MyLogger(this.getClass());
-	
-	public GkParserLastFm()
+    private MyLogger log = new MyLogger(this.getClass());
+    
+    public GkParserLastFm()
+    {
+	super();
+	try
 	{
-		try
-		{			
-			this.setSource("last.fm");
-	
-			log.debug("creating last.fm parser");
-			String userAgent = Config.getUserAgent();
-			boolean debugMode = Config.getDebugMode();
-			String apiKey = Config.getApiKey();
-			String secret = Config.getApiKeySecret();
-			Session session;
-	
-			log.debug("configuring and authenticating last.fm access with userAgent=<"+userAgent+">, apiKey=<"+apiKey+">, secret=<"+secret+">, debugMode=<"+debugMode+">");
-			Caller.getInstance().setUserAgent(userAgent);
-		    Caller.getInstance().setDebugMode(debugMode);
-		    session = Authenticator.getSession(Authenticator.getToken(apiKey), apiKey, secret);
-		}
-		catch (CallException e)
-		{
-			setConstructorEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework; probably bad internet connection: "+e.getClass().getName()+" -- "+e.getMessage());
-		}
+	    this.setSource(Config.getSourceString());
+	    
+	    log.debug("creating last.fm parser");
+	    String userAgent = Config.getUserAgent();
+	    boolean debugMode = Config.getDebugMode();
+	    String apiKey = Config.getApiKey();
+	    String secret = Config.getApiKeySecret();
+	    Session session;
+	    
+	    log.debug("configuring and authenticating last.fm access with userAgent=<" + userAgent + ">, apiKey=<" + apiKey + ">, secret=<" + secret + ">, debugMode=<" + debugMode + ">");
+	    Caller.getInstance().setUserAgent(userAgent);
+	    Caller.getInstance().setDebugMode(debugMode);
+	    session = Authenticator.getSession(Authenticator.getToken(apiKey), apiKey, secret);
 	}
-	
-	@Override
-	public IGkParsingResultArtist parseArtist(IGkParserQuery query) throws GkParserException
+	catch (CallException e)
 	{
-		GkParsingResultArtist result = (GkParsingResultArtist) setResultStart(query, getSource());
-		IGkDbArtist artist = null;
-		try
-		{			
-			if(query.isSampler())
-			{
-		//			query for sampler
-				log.debug("query for sampler "+query.getRelease());
-				result.addEvent(GkParsingEventType.ERROR_ARGUMENT, "query for sampler with artist empty");
-				result.setState(GkParsingState.ERROR);
-				setResultErrorThrow(result, null);
-			}
-			if (query.hasRelease())
-			{
-				log.debug("query for artist <"+query.getArtist()+"> with release <"+query.getRelease()+">");
-				artist = this.queryArtistViaRelease(query.getArtist(), query.getRelease(), result);
-			}
-			else
-			{
-				log.debug("query for artist <"+query.getArtist()+">");
-				artist = this.queryArtist(query.getArtist(), result);
-			}
-			result.setArtist(artist);
-			return (IGkParsingResultArtist) setResultSuccess(result);			
-		}
-		catch (CallException e)
-		{
-			result.addEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework; probably bad internet connection: "+e.getClass().getName()+" -- "+e.getMessage());
-			this.setResultErrorThrow(result, e);
-		}
-		return null;
+	    setConstructorEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage());
 	}
-
-	@Override
-	public IGkParsingResultSampler parseSampler(IGkParserQuery query) throws GkParserException
+    }
+    
+    @Override
+    public IGkParsingResultArtist parseArtist(IGkParserQuery query) throws GkParserException
+    {
+	GkParsingResultArtist result = (GkParsingResultArtist) setResultStart(query, getSource());
+	IGkDbArtist artist = null;
+	try
 	{
-		GkParsingResultSampler result = (GkParsingResultSampler) setResultStart(query, getSource());
-
-		if(query.isSampler())
-		{
-//			query for sampler
-			//TODO
-			log.debug("query for sampler "+query.getRelease());
-			throw new RuntimeException("NOT IMPLEMENTED YET!");
-		}
-		else
-		{
-			log.debug("query for artist <"+query.getArtist()+">");
-			//TODO ERROR schmeissen!
-			throw new RuntimeException("NOT IMPLEMENTED YET!");
-		}
-	}
-
-	private IGkDbArtist queryArtist(String artistName, GkParsingResultArtist result) throws GkParserException
-	{
-		Collection<Artist> artists = queryLastFmArtists(artistName);
-		if(!artists.isEmpty())
-		{
-			result.addEvent(GkParsingEventType.ENTRY_FOUND, "query for artist <"+artistName+"> returned <"+artists.size()+"> matches");
-			Artist chosen = findBestMatchingArtist(artistName, artists);
-			return new GkDbArtistLastFm(chosen);			
-		}
-		result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "query for artist <"+artistName+"> returned <"+artists.size()+"> matches");
+	    if (query.isSampler())
+	    {
+		// query for sampler
+		log.debug("query for sampler " + query.getRelease());
+		result.addEvent(GkParsingEventType.ERROR_ARGUMENT, "query for sampler with artist empty");
+		result.setState(GkParsingState.ERROR);
 		setResultErrorThrow(result, null);
-		/** won't be reached */
-		return null;
+	    }
+	    if (query.hasRelease())
+	    {
+		log.debug("query for artist <" + query.getArtist() + "> with release <" + query.getRelease() + ">");
+		artist = this.queryArtistViaRelease(query.getArtist(), query.getRelease(), result);
+	    }
+	    else
+	    {
+		log.debug("query for artist <" + query.getArtist() + ">");
+		artist = this.queryArtist(query.getArtist(), result);
+	    }
+	    result.setArtist(artist);
+	    return (IGkParsingResultArtist) setResultSuccess(result);
 	}
-	
-	private IGkDbArtist queryArtistViaRelease(String artistName, String releaseName, GkParsingResultArtist result) throws GkParserException
+	catch (CallException e)
 	{
-		Artist artist = queryLastFmArtistViaReleases(artistName, releaseName);
-		if(artist==null)
+	    result.addEvent(GkParsingEventType.EXTERNAL_ERROR, "exception in last.fm framework; probably bad internet connection: " + e.getClass().getName() + " -- " + e.getMessage());
+	    this.setResultErrorThrow(result, e);
+	}
+	return null;
+    }
+    
+    @Override
+    public IGkParsingResultSampler parseSampler(IGkParserQuery query) throws GkParserException
+    {
+	GkParsingResultSampler result = (GkParsingResultSampler) setResultStart(query, getSource());
+	
+	if (query.isSampler())
+	{
+	    // query for sampler
+	    // TODO
+	    log.debug("query for sampler " + query.getRelease());
+	    throw new RuntimeException("NOT IMPLEMENTED YET!");
+	}
+	else
+	{
+	    log.debug("query for artist <" + query.getArtist() + ">");
+	    // TODO ERROR schmeissen!
+	    throw new RuntimeException("NOT IMPLEMENTED YET!");
+	}
+    }
+    
+    private IGkDbArtist queryArtist(String artistName, GkParsingResultArtist result) throws GkParserException
+    {
+	Collection<Artist> artists = queryLastFmArtists(artistName);
+	if (!artists.isEmpty())
+	{
+	    result.addEvent(GkParsingEventType.ENTRY_FOUND, "query for artist <" + artistName + "> returned <" + artists.size() + "> matches");
+	    Artist chosen = findBestMatchingArtist(artistName, artists);
+	    return new GkDbArtistLastFm(chosen);
+	}
+	result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "query for artist <" + artistName + "> returned <" + artists.size() + "> matches");
+	setResultErrorThrow(result, null);
+	/** won't be reached */
+	return null;
+    }
+    
+    private IGkDbArtist queryArtistViaRelease(String artistName, String releaseName, GkParsingResultArtist result) throws GkParserException
+    {
+	Artist artist = queryLastFmArtistViaReleases(artistName, releaseName);
+	if (artist == null)
+	{
+	    result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "release <" + releaseName + "> is NOT available for artist <" + artistName + ">");
+	    return this.queryArtist(artistName, result);
+	}
+	result.addEvent(GkParsingEventType.ENTRY_FOUND, "release <" + releaseName + "> is available for artist <" + artistName + ">");
+	return new GkDbArtistLastFm(artist);
+    }
+    
+    private IGkDbRelease querySampler(String samplerName)
+    {
+	// TODO
+	throw new RuntimeException("NOT IMPLEMENTED YET!");
+    }
+    
+    private Collection<Artist> queryLastFmArtists(String artistName)
+    {
+	Collection<Artist> artists = LastFmHelper.searchArtist(artistName, false);
+	LogLevel level = LogLevel.DEBUG;
+	if (log.isLogLevelEnabled(level))
+	{
+	    List<String> matches = new ArrayList<>();
+	    Iterator<Artist> it = artists.iterator();
+	    while (it.hasNext())
+	    {
+		matches.add(it.next().getName());
+	    }
+	    log.log(level, "query for artist <" + artistName + "> returned <" + artists.size() + "> matches: " + matches);
+	}
+	return artists;
+    }
+    
+    private Artist queryLastFmArtistViaReleases(String artistName, String releaseName)
+    {
+	Collection<Album> albums = Album.search(releaseName, Config.getApiKey());
+	if ((albums == null) || (albums.size() == 0))
+	{
+	    return null;
+	}
+	return findBestMatchingAlbumArtist(artistName, releaseName, albums);
+    }
+    
+    private Artist findBestMatchingArtist(String artistName, Collection<Artist> artists)
+    {
+	Iterator<Artist> it = artists.iterator();
+	int i = 0;
+	while (it.hasNext())
+	{
+	    if (i >= Config.getSearchDepth())
+	    {
+		break;
+	    }
+	    Artist me = it.next();
+	    String meName = me.getName();
+	    double thresh = Config.getSearchTreshold();
+	    if (StringUtilsLastFm.compare(meName, artistName) >= thresh)
+	    {
+		return me;
+	    }
+	}
+	return artists.iterator().next();
+    }
+    
+    private Artist findBestMatchingAlbumArtist(String artistName, String releaseName, Collection<Album> albums)
+    {
+	List<String> matches = new ArrayList<>();
+	Artist ret = null;
+	Iterator<Album> it = albums.iterator();
+	LogLevel level = LogLevel.DEBUG;
+	int i = 0;
+	while (it.hasNext())
+	{
+	    Album albumLocal = it.next();
+	    String artistNameLocal = albumLocal.getArtist();
+	    matches.add(artistNameLocal + "/" + albumLocal.getName());
+	    if (i >= Config.getSearchDepth())
+	    {
+		break;
+	    }
+	    
+	    double thresh = Config.getSearchTresholdViaAlbum();
+	    if (StringUtilsLastFm.compare(artistNameLocal, artistName) >= thresh)
+	    {
+		ret = LastFmHelper.searchArtist(artistNameLocal, false).iterator().next();
+		if (log.isLogLevelEnabled(level))
 		{
-			result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "release <"+releaseName+"> is NOT available for artist <"+artistName+">");
-			return this.queryArtist(artistName, result);
+		    break;
 		}
-		result.addEvent(GkParsingEventType.ENTRY_FOUND, "release <"+releaseName+"> is available for artist <"+artistName+">");
-		return new GkDbArtistLastFm(artist);
+	    }
 	}
-	
-	private IGkDbRelease querySampler(String samplerName)
-	{
-//		TODO
-		throw new RuntimeException("NOT IMPLEMENTED YET!");
-	}
-	
-	private Collection<Artist> queryLastFmArtists(String artistName)
-	{
-		Collection<Artist> artists = LastFmHelper.searchArtist(artistName, false);
-		LogLevel level = LogLevel.DEBUG;
-		if(log.isLogLevelEnabled(level))
-		{
-			List<String> matches = new ArrayList<>();
-			Iterator<Artist> it = artists.iterator();
-			while(it.hasNext())
-			{
-				matches.add(it.next().getName());
-			}
-			log.log(level, "query for artist <"+artistName+"> returned <"+artists.size()+"> matches: "+matches);
-		}
-		return artists;
-	}
-	
-	private Artist queryLastFmArtistViaReleases(String artistName, String releaseName)
-	{
-		Collection<Album> albums = Album.search(releaseName, Config.getApiKey());
-		if((albums==null)||(albums.size()==0))
-		{
-			return null;
-		}
-		return findBestMatchingAlbumArtist(artistName, releaseName, albums);
-	}
-
-	private Artist findBestMatchingArtist(String artistName, Collection<Artist> artists)
-	{
-		Iterator<Artist> it = artists.iterator();
-		int i = 0;
-		while(it.hasNext())
-		{
-			if(i>=Config.getSearchDepth())
-			{
-				break;
-			}
-			Artist me = it.next();
-			String meName = me.getName();
-			double thresh = Config.getSearchTreshold();
-			if(StringUtilsLastFm.compare(meName, artistName)>=thresh)
-			{
-				return me;
-			}	
-		}
-		return artists.iterator().next();
-	}
-	
-	private Artist findBestMatchingAlbumArtist(String artistName, String releaseName, Collection<Album> albums)
-	{
-		List<String> matches = new ArrayList<>();
-		Artist ret = null;
-		Iterator<Album> it = albums.iterator();
-		LogLevel level = LogLevel.DEBUG;
-		int i = 0;
-		while(it.hasNext())
-		{
-			Album albumLocal = it.next();
-			String artistNameLocal = albumLocal.getArtist();
-			matches.add(artistNameLocal+"/"+albumLocal.getName());
-			if(i>=Config.getSearchDepth())
-			{
-				break;
-			}
-			
-			double thresh = Config.getSearchTresholdViaAlbum();
-			if(StringUtilsLastFm.compare(artistNameLocal, artistName)>=thresh)
-			{
-				ret = LastFmHelper.searchArtist(artistNameLocal, false).iterator().next();
-				if(log.isLogLevelEnabled(level))
-				{
-					break;
-				}
-			}	
-		}
-		log.log(level, "query for release <"+releaseName+"> returned <"+albums.size()+"> matches: "+matches);
-		return ret;
-	}
-	
+	log.log(level, "query for release <" + releaseName + "> returned <" + albums.size() + "> matches: " + matches);
+	return ret;
+    }
+    
 }

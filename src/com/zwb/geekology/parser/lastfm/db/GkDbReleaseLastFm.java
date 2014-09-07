@@ -22,6 +22,7 @@ import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
+import com.zwb.tab.Tab;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.CallException;
@@ -81,7 +82,7 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
     {
 	try
 	{
-	    return LazyLoader.loadLazy(this.tags, new TrackLoader());
+	    return LazyLoader.loadLazy(this.tracks, new TrackLoader());
 	}
 	catch (CallException e)
 	{
