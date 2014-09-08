@@ -22,6 +22,7 @@ import com.zwb.geekology.parser.lastfm.db.GkDbArtistLastFm;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.geekology.parser.lastfm.util.MyLogger;
 import com.zwb.geekology.parser.lastfm.util.MyLogger.LogLevel;
+import com.zwb.geekology.parser.lastfm.util.SessionManager;
 import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
 
 import de.umass.lastfm.Album;
@@ -41,18 +42,8 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	try
 	{
 	    this.setSource(Config.getSourceString());
-	    
 	    log.debug("creating last.fm parser");
-	    String userAgent = Config.getUserAgent();
-	    boolean debugMode = Config.getDebugMode();
-	    String apiKey = Config.getApiKey();
-	    String secret = Config.getApiKeySecret();
-	    Session session;
-	    
-	    log.debug("configuring and authenticating last.fm access with userAgent=<" + userAgent + ">, apiKey=<" + apiKey + ">, secret=<" + secret + ">, debugMode=<" + debugMode + ">");
-	    Caller.getInstance().setUserAgent(userAgent);
-	    Caller.getInstance().setDebugMode(debugMode);
-	    session = Authenticator.getSession(Authenticator.getToken(apiKey), apiKey, secret);
+	    SessionManager.getInstance();
 	}
 	catch (CallException e)
 	{

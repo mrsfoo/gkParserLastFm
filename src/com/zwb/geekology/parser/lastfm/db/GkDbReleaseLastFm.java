@@ -19,6 +19,7 @@ import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
 import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
+import com.zwb.geekology.parser.lastfm.util.SessionManager;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
@@ -26,6 +27,7 @@ import com.zwb.tab.Tab;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.CallException;
+import de.umass.lastfm.Library;
 import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 
@@ -115,7 +117,7 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
     {
 	public List<IGkDbTrack> load()
 	{
-	    Collection<Track> t = GkDbReleaseLastFm.this.album.getTracks();
+	    Collection<Track> t = GkDbReleaseLastFm.this.album.getTracks();	    	    
 	    List<IGkDbTrack> tracks = new ArrayList<>();
 	    if (t == null)
 	    {
