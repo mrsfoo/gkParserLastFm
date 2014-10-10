@@ -23,21 +23,20 @@ import de.umass.lastfm.MusicEntry;
 
 public abstract class AbstrGkDbItemLastFmWithTags extends AbstrGkDbItemLastFmWithDesc implements IGkDbItemWithStyleTags
 {
-	protected Ptr<List<IGkDbTag>> tags = new Ptr<>();
-	protected Ptr<List<String>> tagNames = new Ptr<List<String>>();
-
-	public AbstrGkDbItemLastFmWithTags(MusicEntry lastfmMusicEntry, IGkParsingSource source)
-	{
-		super(lastfmMusicEntry, source);
-	}
-
-	@Override
-	public List<String> getStyleTagNames() 
-	{
-		return LazyLoader.loadLazy(this.tagNames, new NameLoader(this.getStyleTags()));
-	}
-
-	@Override
-	public abstract List<IGkDbTag> getStyleTags();
+    protected Ptr<List<IGkDbTag>> tags = new Ptr<>();
+    protected Ptr<List<String>> tagNames = new Ptr<List<String>>();
+    
+    public AbstrGkDbItemLastFmWithTags(MusicEntry lastfmMusicEntry, IGkParsingSource source)
+    {
+	super(lastfmMusicEntry, source);
+    }
+    
+    @Override
+    public List<String> getStyleTagNames()
+    {
+	return LazyLoader.loadLazy(this.tagNames, new NameLoader(this.getStyleTags()));
+    }
+    
+    @Override
+    public abstract List<IGkDbTag> getStyleTags();
 }
-
