@@ -15,9 +15,9 @@ import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
+import com.zwb.geekology.parser.impl.NameLoader;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
-import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.geekology.parser.lastfm.util.SessionManager;
 import com.zwb.lazyload.ILoader;
@@ -161,6 +161,48 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
     public boolean hasReleaseDate()
     {
 	return (this.getReleaseDate() != null);
+    }
+
+    @Override
+    public Integer getTrackCount()
+    {
+	return this.getTracks().size();
+    }
+
+    @Override
+    public Integer getDiscCount()
+    {
+	List<IGkDbTrack> tracks = this.getTracks();
+	int discs = 0;
+	for(IGkDbTrack t: tracks)
+	{
+	    discs = Math.max(discs, t.getDiscNo());
+	}
+	return discs;
+    }
+
+    @Override
+    public List<String> getFormats()
+    {
+	return new ArrayList<String>();
+    }
+
+    @Override
+    public boolean hasFormats()
+    {
+	return false;
+    }
+
+    @Override
+    public List<String> getLabels()
+    {
+	return new ArrayList<String>();
+    }
+
+    @Override
+    public boolean hasLabels()
+    {
+	return false;
     }
     
 }

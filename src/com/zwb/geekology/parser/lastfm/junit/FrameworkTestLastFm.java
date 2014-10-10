@@ -11,7 +11,7 @@ import de.umass.lastfm.Album;
 import de.umass.lastfm.Library;
 import de.umass.lastfm.Track;
 
-public class FrameworkTest extends TestCase
+public class FrameworkTestLastFm extends TestCase
 {
     public void testGetTracks()
     {

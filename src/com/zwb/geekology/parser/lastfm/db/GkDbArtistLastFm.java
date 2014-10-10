@@ -11,8 +11,8 @@ import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
+import com.zwb.geekology.parser.impl.NameLoader;
 import com.zwb.geekology.parser.lastfm.Config;
-import com.zwb.geekology.parser.lastfm.db.util.NameLoader;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
@@ -134,6 +134,13 @@ public class GkDbArtistLastFm extends AbstrGkDbItemLastFmWithTags implements IGk
 	    }
 	    return similar;
 	}
+    }
+
+    @Override
+    public boolean hasSimilars()
+    {
+	List<IGkDbArtist> sim = getSimilar();
+	return sim!=null && !sim.isEmpty();
     }
     
 }

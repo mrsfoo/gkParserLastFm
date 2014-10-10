@@ -15,43 +15,48 @@ import de.umass.lastfm.MusicEntry;
 import de.umass.lastfm.Tag;
 import de.umass.lastfm.Track;
 
-public class LastFmHelper 
+public class LastFmHelper
 {
-	public static Collection<Artist> searchArtist(String artistName, boolean catchExceptions)
-	{
-		try
-		{
-			return Artist.search(artistName, Config.getApiKey());
-		}
-		catch (CallException e)
-		{
-			if(catchExceptions)
-			{
-				return Collections.emptyList();
-			}
-			else
-			{
-				throw e;
-			}
-		}
-	}
+    public LastFmHelper()
+    {
 	
-	public static Collection<Album> searchAlbumsForArtist(String artistName, boolean catchExceptions)
+    }
+    
+    public Collection<Artist> searchArtist(String artistName, boolean catchExceptions)
+    {
+	try
 	{
-		try
-		{
-			return Artist.getTopAlbums(artistName, Config.getApiKey());
-		}
-		catch (CallException e)
-		{
-			if(catchExceptions)
-			{
-				return Collections.emptyList();
-			}
-			else
-			{
-				throw e;
-			}
-		}
+	    return Artist.search(artistName, Config.getApiKey());
 	}
+	catch (CallException e)
+	{
+	    if (catchExceptions)
+	    {
+		return Collections.emptyList();
+	    }
+	    else
+	    {
+		throw e;
+	    }
+	}
+    }
+
+    public Collection<Album> searchAlbum(String releaseName, boolean catchExceptions)
+    {
+	try
+	{
+	    return Album.search(releaseName, Config.getApiKey());
+	}
+	catch (CallException e)
+	{
+	    if (catchExceptions)
+	    {
+		return Collections.emptyList();
+	    }
+	    else
+	    {
+		throw e;
+	    }
+	}
+    }
 }

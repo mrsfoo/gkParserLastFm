@@ -35,14 +35,16 @@ import de.umass.lastfm.Session;
 public class GkParserLastFm extends AbstrGkParser implements IGkParser
 {
     private MyLogger log = new MyLogger(this.getClass());
+    private LastFmHelper lastFm;
     
     public GkParserLastFm()
     {
 	super();
 	try
 	{
-	    this.setSource(Config.getSourceString());
 	    log.debug("creating last.fm parser");
+	    this.setSource(Config.getSourceString());
+	    this.lastFm = new LastFmHelper();
 	    SessionManager.getInstance();
 	}
 	catch (CallException e)
@@ -142,7 +144,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
     
     private Collection<Artist> queryLastFmArtists(String artistName)
     {
-	Collection<Artist> artists = LastFmHelper.searchArtist(artistName, false);
+	Collection<Artist> artists = this.lastFm.searchArtist(artistName, false);
 	LogLevel level = LogLevel.DEBUG;
 	if (log.isLogLevelEnabled(level))
 	{
@@ -159,7 +161,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
     
     private Artist queryLastFmArtistViaReleases(String artistName, String releaseName)
     {
-	Collection<Album> albums = Album.search(releaseName, Config.getApiKey());
+	Collection<Album> albums = this.lastFm.searchAlbum(artistName, false);
 	if ((albums == null) || (albums.size() == 0))
 	{
 	    return null;
@@ -208,7 +210,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	    double thresh = Config.getSearchTresholdViaAlbum();
 	    if (StringUtilsLastFm.compare(artistNameLocal, artistName) >= thresh)
 	    {
-		ret = LastFmHelper.searchArtist(artistNameLocal, false).iterator().next();
+		ret = this.lastFm.searchArtist(artistNameLocal, false).iterator().next();
 		if (log.isLogLevelEnabled(level))
 		{
 		    break;

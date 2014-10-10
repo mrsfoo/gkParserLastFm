@@ -2,8 +2,10 @@ package com.zwb.geekology.parser.lastfm.db;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
 import com.zwb.geekology.parser.api.db.IGkDbArtist;
@@ -30,7 +32,7 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
     private IGkDbRelease release;
     private IGkDbArtist artist;
     private Integer trackNo;
-    private Ptr<Integer> duration = new Ptr<Integer>();
+    private Ptr<Long> duration = new Ptr<Long>();
     
     public GkDbTrackLastFm(Track track, IGkDbArtist artist, IGkDbRelease release, int trackNo)
     {
@@ -60,7 +62,7 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
     }
     
     @Override
-    public Integer getDuration()
+    public Long getDuration()
     {
 	try
 	{
@@ -93,11 +95,11 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
 	return (this.getDuration() != -1);
     }
     
-    class DurationLoader implements ILoader<Integer>
+    class DurationLoader implements ILoader<Long>
     {
-	public Integer load()
+	public Long load()
 	{
-	    return GkDbTrackLastFm.this.track.getDuration();
+	    return new Long(GkDbTrackLastFm.this.track.getDuration());
 	}
     }
     
@@ -114,5 +116,42 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
 	    }
 	    return tags;
 	}
+    }
+
+    @Override
+    public Integer getDiscNo()
+    {
+	return 1;
+    }
+    
+    @Override
+    public int compareTo(IGkDbTrack o)
+    {
+	if(this.getAbsolutePosition()>o.getAbsolutePosition())
+	{
+	    return 1;
+	}
+	else if(this.getAbsolutePosition()<o.getAbsolutePosition())
+	{
+	    return -1;
+	}
+	else
+	{
+	    return this.getName().compareTo(o.getName());
+	}
+    }
+
+    @Override
+    public Integer getAbsolutePosition()
+    {
+	Map<Integer, Integer> trackNos = new HashMap<Integer,Integer>();
+	
+	int abs = 0;
+	for(int i=1; i<this.getDiscNo(); i++)
+	{
+	    abs += trackNos.get(i);
+	}
+	abs += this.getTrackNo();
+	return abs;
     }
 }

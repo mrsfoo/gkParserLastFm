@@ -53,6 +53,26 @@ public abstract class AbstrGkDbItemLastFmWithDesc extends AbstrGkDbItemLastFm im
 	}
     }
     
+    public boolean hasDescriptionSummary()
+    {
+	String s = getDescriptionSummary();
+	if((s==null)||s.isEmpty())
+	{
+	    return false;
+	}
+	return true;
+    }
+    
+    public boolean hasDescription()
+    {
+	String s = getDescription();
+	if((s==null)||s.isEmpty())
+	{
+	    return false;
+	}
+	return true;	
+    }
+    
     class SummaryLoader implements ILoader<String>
     {
 	@Override
