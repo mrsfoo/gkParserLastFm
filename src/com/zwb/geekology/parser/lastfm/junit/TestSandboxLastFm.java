@@ -20,7 +20,7 @@ import com.zwb.geekology.parser.api.exception.GkParserExceptionNoResultFound;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParsingResult;
 import com.zwb.geekology.parser.api.parser.IGkParsingResultArtist;
-import com.zwb.geekology.parser.impl.DbItemFileWriter;
+import com.zwb.geekology.parser.impl.util.DbItemFileWriter;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.GkParserLastFm;
 import com.zwb.stringutil.StringReformat;
@@ -142,45 +142,45 @@ public class TestSandboxLastFm extends TestCase
 	
     }
     
-    public void testComparisons()
-    {
-	List<String> input = Arrays.asList("scott walker", "walker brothers", "trümmer");
-	int dep = 3;
-	
-	Map<String, List<String>> map = new HashMap<>();
-	for (String s : input)
-	{
-	    map.put(s, new ArrayList<>());
-	    Collection<Artist> c = Artist.search(s, Config.getApiKey());
-	    Iterator<Artist> it = c.iterator();
-	    for (int i = 0; i < Math.min(dep, c.size()); i++)
-	    {
-		map.get(s).add(it.next().getName());
-	    }
-	}
-	
-	for (Entry<String, List<String>> e : map.entrySet())
-	{
-	    Tab tab = new Tab("ComparisonResults for <" + e.getKey() + ">", "Compare", "equals", "equals reformat", "equals reformat/remove", "Dice reformat", "Dice reformat/remove", "Levenshtein reformat", "Levenshtein reformat/remove");
-	    for (String s : e.getValue())
-	    {
-		String string0 = s;
-		String string1 = e.getKey();
-		
-		String equals = Boolean.toString(string0.equals(string1));
-		String equalsReformat = Boolean.toString(StringReformat.equals(string0, string1, false));
-		String equalsReformatRemove = Boolean.toString(StringReformat.equals(string0, string1, true));
-		String diceReformat = Double.toString(StringReformat.compareDice(string0, string1, false));
-		String diceReformatRemove = Double.toString(StringReformat.compareDice(string0, string1, true));
-		String levenshteinReformat = Double.toString(StringReformat.compareLevenshtein(string0, string1, false));
-		String levenshteinReformatRemove = Double.toString(StringReformat.compareLevenshtein(string0, string1, true));
-		tab.addRow(string0, equals, equalsReformat, equalsReformatRemove, diceReformat, diceReformatRemove, levenshteinReformat, levenshteinReformatRemove);
-	    }
-	    System.out.println("\n\n" + tab.printFormatted());
-	}
-	/**
-	 * Resultat: am besten Levenshtein reformat/remove mit Schwelle 0.7-0.75
-	 */
-    }
+//    public void testComparisons()
+//    {
+//	List<String> input = Arrays.asList("scott walker", "walker brothers", "trümmer");
+//	int dep = 3;
+//	
+//	Map<String, List<String>> map = new HashMap<>();
+//	for (String s : input)
+//	{
+//	    map.put(s, new ArrayList<>());
+//	    Collection<Artist> c = Artist.search(s, Config.getApiKey());
+//	    Iterator<Artist> it = c.iterator();
+//	    for (int i = 0; i < Math.min(dep, c.size()); i++)
+//	    {
+//		map.get(s).add(it.next().getName());
+//	    }
+//	}
+//	
+//	for (Entry<String, List<String>> e : map.entrySet())
+//	{
+//	    Tab tab = new Tab("ComparisonResults for <" + e.getKey() + ">", "Compare", "equals", "equals reformat", "equals reformat/remove", "Dice reformat", "Dice reformat/remove", "Levenshtein reformat", "Levenshtein reformat/remove");
+//	    for (String s : e.getValue())
+//	    {
+//		String string0 = s;
+//		String string1 = e.getKey();
+//		
+//		String equals = Boolean.toString(string0.equals(string1));
+//		String equalsReformat = Boolean.toString(StringReformat.equals(string0, string1, false));
+//		String equalsReformatRemove = Boolean.toString(StringReformat.equals(string0, string1, true));
+//		String diceReformat = Double.toString(StringReformat.compareDice(string0, string1, false));
+//		String diceReformatRemove = Double.toString(StringReformat.compareDice(string0, string1, true));
+//		String levenshteinReformat = Double.toString(StringReformat.compareLevenshtein(string0, string1, false));
+//		String levenshteinReformatRemove = Double.toString(StringReformat.compareLevenshtein(string0, string1, true));
+//		tab.addRow(string0, equals, equalsReformat, equalsReformatRemove, diceReformat, diceReformatRemove, levenshteinReformat, levenshteinReformatRemove);
+//	    }
+//	    System.out.println("\n\n" + tab.printFormatted());
+//	}
+//	/**
+//	 * Resultat: am besten Levenshtein reformat/remove mit Schwelle 0.7-0.75
+//	 */
+//    }
     
 }

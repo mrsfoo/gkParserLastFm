@@ -8,11 +8,14 @@ import com.zwb.geekology.parser.abstr.db.AbstrGkDbItem;
 import com.zwb.geekology.parser.api.db.IGkDbTag;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
-import com.zwb.geekology.parser.impl.NameLoader;
+import com.zwb.geekology.parser.impl.util.GkParserStringUtils;
+import com.zwb.geekology.parser.impl.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.Config;
+import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
+import com.zwb.stringutil.ISatiniseFilterArray;
 
 import de.umass.lastfm.CallException;
 import de.umass.lastfm.Tag;
@@ -173,11 +176,11 @@ public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
     {
 	if(this.getWeight()>o.getWeight())
 	{
-	    return 1;
+	    return -1;
 	}
 	else if(this.getWeight()<o.getWeight())
 	{
-	    return -1;
+	    return 1;
 	}
 	else
 	{
@@ -185,4 +188,9 @@ public class GkDbTagLastFm extends AbstrGkDbItem implements IGkDbTag
 	}
     }
 
+    @Override
+    public ISatiniseFilterArray getFilters()
+    {
+	return StringUtilsLastFm.getAllTagNameFilters();
+    }
 }

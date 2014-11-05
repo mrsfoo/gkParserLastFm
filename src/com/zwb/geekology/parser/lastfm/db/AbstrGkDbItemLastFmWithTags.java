@@ -12,7 +12,7 @@ import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
 import com.zwb.geekology.parser.api.parser.IGkParsingSource;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
-import com.zwb.geekology.parser.impl.NameLoader;
+import com.zwb.geekology.parser.impl.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;

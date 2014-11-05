@@ -15,7 +15,6 @@ import com.zwb.geekology.parser.api.parser.IGkParsingResultArtist;
 import com.zwb.geekology.parser.api.parser.IGkParsingResultSampler;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
 import com.zwb.geekology.parser.enums.GkParsingState;
-import com.zwb.geekology.parser.impl.GkParsingEvent;
 import com.zwb.geekology.parser.impl.GkParsingResultArtist;
 import com.zwb.geekology.parser.impl.GkParsingResultSampler;
 import com.zwb.geekology.parser.lastfm.db.GkDbArtistLastFm;
@@ -24,13 +23,11 @@ import com.zwb.geekology.parser.lastfm.util.MyLogger;
 import com.zwb.geekology.parser.lastfm.util.MyLogger.LogLevel;
 import com.zwb.geekology.parser.lastfm.util.SessionManager;
 import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
+import com.zwb.stringutil.ComparisonAlgorithm;
 
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
-import de.umass.lastfm.Authenticator;
 import de.umass.lastfm.CallException;
-import de.umass.lastfm.Caller;
-import de.umass.lastfm.Session;
 
 public class GkParserLastFm extends AbstrGkParser implements IGkParser
 {
@@ -182,7 +179,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	    Artist me = it.next();
 	    String meName = me.getName();
 	    double thresh = Config.getSearchTreshold();
-	    if (StringUtilsLastFm.compare(meName, artistName) >= thresh)
+	    if (StringUtilsLastFm.compareArtists(meName, artistName) >= thresh)
 	    {
 		return me;
 	    }
@@ -208,7 +205,7 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	    }
 	    
 	    double thresh = Config.getSearchTresholdViaAlbum();
-	    if (StringUtilsLastFm.compare(artistNameLocal, artistName) >= thresh)
+	    if (StringUtilsLastFm.compareArtists(artistNameLocal, artistName) >= thresh)
 	    {
 		ret = this.lastFm.searchArtist(artistNameLocal, false).iterator().next();
 		if (log.isLogLevelEnabled(level))

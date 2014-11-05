@@ -15,11 +15,15 @@ import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
-import com.zwb.geekology.parser.impl.DbItemFormatter;
+import com.zwb.geekology.parser.impl.util.DbItemFormatter;
+import com.zwb.geekology.parser.impl.util.GkParserStringUtils;
 import com.zwb.geekology.parser.lastfm.Config;
+import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
+import com.zwb.stringutil.ISatiniseFilter;
+import com.zwb.stringutil.ISatiniseFilterArray;
 import com.zwb.tab.Tab;
 
 import de.umass.lastfm.CallException;
@@ -153,5 +157,11 @@ public class GkDbTrackLastFm extends AbstrGkDbItemLastFmWithTags implements IGkD
 	}
 	abs += this.getTrackNo();
 	return abs;
+    }
+
+    @Override
+    public ISatiniseFilterArray getFilters()
+    {
+	return StringUtilsLastFm.getAllTrackNameFilters();
     }
 }

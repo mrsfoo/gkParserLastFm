@@ -15,14 +15,17 @@ import com.zwb.geekology.parser.api.db.IGkDbTrack;
 import com.zwb.geekology.parser.api.parser.GkParserObjectFactory;
 import com.zwb.geekology.parser.api.parser.IGkParsingEvent;
 import com.zwb.geekology.parser.enums.GkParsingEventType;
-import com.zwb.geekology.parser.impl.NameLoader;
+import com.zwb.geekology.parser.impl.util.GkParserStringUtils;
+import com.zwb.geekology.parser.impl.util.NameLoader;
 import com.zwb.geekology.parser.lastfm.Config;
 import com.zwb.geekology.parser.lastfm.db.GkDbTrackLastFm.TagLoader;
 import com.zwb.geekology.parser.lastfm.util.LastFmHelper;
 import com.zwb.geekology.parser.lastfm.util.SessionManager;
+import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
 import com.zwb.lazyload.ILoader;
 import com.zwb.lazyload.LazyLoader;
 import com.zwb.lazyload.Ptr;
+import com.zwb.stringutil.ISatiniseFilterArray;
 import com.zwb.tab.Tab;
 
 import de.umass.lastfm.Album;
@@ -205,4 +208,9 @@ public class GkDbReleaseLastFm extends AbstrGkDbItemLastFmWithTags implements IG
 	return false;
     }
     
+    @Override
+    public ISatiniseFilterArray getFilters()
+    {
+	return StringUtilsLastFm.getAllReleaseNameFilters(this.getArtist().getName());
+    }
 }
