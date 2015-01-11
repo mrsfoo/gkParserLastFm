@@ -23,8 +23,6 @@ import com.zwb.geekology.parser.lastfm.util.MyLogger;
 import com.zwb.geekology.parser.lastfm.util.MyLogger.LogLevel;
 import com.zwb.geekology.parser.lastfm.util.SessionManager;
 import com.zwb.geekology.parser.lastfm.util.StringUtilsLastFm;
-import com.zwb.stringutil.ComparisonAlgorithm;
-
 import de.umass.lastfm.Album;
 import de.umass.lastfm.Artist;
 import de.umass.lastfm.CallException;
@@ -108,13 +106,16 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
     
     private IGkDbArtist queryArtist(String artistName, GkParsingResultArtist result) throws GkParserException
     {
+	log.debug("QUERY: query artist <" + artistName + ">");
 	Collection<Artist> artists = queryLastFmArtists(artistName);
 	if (!artists.isEmpty())
 	{
 	    result.addEvent(GkParsingEventType.ENTRY_FOUND, "query for artist <" + artistName + "> returned <" + artists.size() + "> matches");
 	    Artist chosen = findBestMatchingArtist(artistName, artists);
+	    log.debug("QUERY: queried artist <" + artistName + ">: " + chosen);
 	    return new GkDbArtistLastFm(chosen);
 	}
+	log.debug("QUERY: no result for artist query <" + artistName + ">");
 	result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "query for artist <" + artistName + "> returned <" + artists.size() + "> matches");
 	setResultErrorThrow(result, null);
 	/** won't be reached */
@@ -123,12 +124,15 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
     
     private IGkDbArtist queryArtistViaRelease(String artistName, String releaseName, GkParsingResultArtist result) throws GkParserException
     {
+	log.debug("QUERY: query artist <" + artistName + "> via release <" + releaseName + ">");
 	Artist artist = queryLastFmArtistViaReleases(artistName, releaseName);
 	if (artist == null)
 	{
 	    result.addEvent(GkParsingEventType.NO_ENTRY_FOUND, "release <" + releaseName + "> is NOT available for artist <" + artistName + ">");
+	    log.debug("QUERY: no result for artist query <" + artistName + "> via release <" + releaseName + ">, trying query without release");
 	    return this.queryArtist(artistName, result);
 	}
+	log.debug("QUERY: queried artist <" + artistName + "> via release <" + releaseName + ">: " + artist);
 	result.addEvent(GkParsingEventType.ENTRY_FOUND, "release <" + releaseName + "> is available for artist <" + artistName + ">");
 	return new GkDbArtistLastFm(artist);
     }
@@ -141,46 +145,47 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
     
     private Collection<Artist> queryLastFmArtists(String artistName)
     {
+	log.debug("QUERY-LAST.FM: query last.fm artist <" + artistName + ">");
 	Collection<Artist> artists = this.lastFm.searchArtist(artistName, false);
-	LogLevel level = LogLevel.DEBUG;
-	if (log.isLogLevelEnabled(level))
-	{
-	    List<String> matches = new ArrayList<>();
-	    Iterator<Artist> it = artists.iterator();
-	    while (it.hasNext())
-	    {
-		matches.add(it.next().getName());
-	    }
-	    log.log(level, "query for artist <" + artistName + "> returned <" + artists.size() + "> matches: " + matches);
-	}
+	logArtistList(LogLevel.DEBUG, artists, "QUERY-LAST.FM: query for artist <" + artistName + "> returned:", "QUERY-LAST.FM: ");
 	return artists;
     }
     
     private Artist queryLastFmArtistViaReleases(String artistName, String releaseName)
     {
+	log.debug("QUERY-LAST.FM: query last.fm artist <" + artistName + "> via release <" + releaseName + ">");
 	Collection<Album> albums = this.lastFm.searchAlbum(artistName, false);
 	if ((albums == null) || (albums.size() == 0))
 	{
+	    log.debug("QUERY-LAST.FM: query for last.fm artist <" + artistName + "> via release <" + releaseName + "> returned no result");
 	    return null;
 	}
-	return findBestMatchingAlbumArtist(artistName, releaseName, albums);
+	logReleaseList(LogLevel.DEBUG, albums, "QUERY-LAST.FM: query for artist <" + artistName + "> via release <" + releaseName + "> returned:", "QUERY-LAST.FM: ");
+	Artist a = findBestMatchingAlbumArtist(artistName, releaseName, albums);
+	log.debug("QUERY-LAST.FM: found best matching artist for query for artist <" + artistName + "> via release <" + releaseName + ">: " + a);
+	return a;
     }
     
     private Artist findBestMatchingArtist(String artistName, Collection<Artist> artists)
     {
 	Iterator<Artist> it = artists.iterator();
 	int i = 0;
+	double thresh = Config.getSearchTreshold();
+	log.trace("MATCH: find best matching artist; name=<" + artistName + ">, thresh=<" + thresh + ">, from: <" + artists + ">");
 	while (it.hasNext())
 	{
 	    if (i >= Config.getSearchDepth())
 	    {
+		log.warn("MATCH: search depth [" + i + "/" + artists.size() + "] reached, break up!");
 		break;
 	    }
 	    Artist me = it.next();
 	    String meName = me.getName();
-	    double thresh = Config.getSearchTreshold();
-	    if (StringUtilsLastFm.compareArtists(meName, artistName) >= thresh)
+	    double val = StringUtilsLastFm.compareArtists(meName, artistName);
+	    log.trace("MATCH: comparing: <" + artistName + "> with <" + meName + "> --> [" + val + ">=" + thresh + "]?");
+	    if (val >= thresh)
 	    {
+		log.info("MATCH: match <" + artistName + "> ~~ <" + meName + ">!");
 		return me;
 	    }
 	}
@@ -193,6 +198,8 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	Artist ret = null;
 	Iterator<Album> it = albums.iterator();
 	LogLevel level = LogLevel.DEBUG;
+	double thresh = Config.getSearchTresholdViaAlbum();
+	log.trace("MATCH: find best matching album artist; artist name=<" + artistName + ">, release name=<" + releaseName + ">, thresh=<" + thresh + ">, from: <" + albums + ">");
 	int i = 0;
 	while (it.hasNext())
 	{
@@ -201,12 +208,15 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 	    matches.add(artistNameLocal + "/" + albumLocal.getName());
 	    if (i >= Config.getSearchDepth())
 	    {
+		log.warn("MATCH: search depth [" + i + "/" + albums.size() + "] reached, break up!");
 		break;
 	    }
 	    
-	    double thresh = Config.getSearchTresholdViaAlbum();
-	    if (StringUtilsLastFm.compareArtists(artistNameLocal, artistName) >= thresh)
+	    double val = StringUtilsLastFm.compareArtists(artistNameLocal, artistName);
+	    log.trace("MATCH: comparing: <" + artistName + "> with <" + artistNameLocal + "> --> [" + val + ">=" + thresh + "]?");
+	    if (val >= thresh)
 	    {
+		log.info("MATCH: match <" + artistName + "> ~~ <" + artistNameLocal + ">!");
 		ret = this.lastFm.searchArtist(artistNameLocal, false).iterator().next();
 		if (log.isLogLevelEnabled(level))
 		{
@@ -214,8 +224,36 @@ public class GkParserLastFm extends AbstrGkParser implements IGkParser
 		}
 	    }
 	}
-	log.log(level, "query for release <" + releaseName + "> returned <" + albums.size() + "> matches: " + matches);
+	log.log(level, "MATCH: query for release <" + releaseName + "> returned <" + albums.size() + "> matches: " + matches);
 	return ret;
+    }
+    
+    private void logArtistList(LogLevel level, Collection<Artist> list, String headline, String prefix)
+    {
+	if (log.isLogLevelEnabled(level))
+	{
+	    log.log(level, headline);
+	    log.log(level, "(size is [" + list.size() + "])");
+	    Iterator<Artist> it = list.iterator();
+	    while (it.hasNext())
+	    {
+		log.log(level, "  " + prefix + it.next().getName());
+	    }
+	}
+    }
+    
+    private void logReleaseList(LogLevel level, Collection<Album> list, String headline, String prefix)
+    {
+	if (log.isLogLevelEnabled(level))
+	{
+	    log.log(level, headline);
+	    log.log(level, "(size is [" + list.size() + "])");
+	    Iterator<Album> it = list.iterator();
+	    while (it.hasNext())
+	    {
+		log.log(level, "  " + prefix + it.next().getName());
+	    }
+	}
     }
     
 }
